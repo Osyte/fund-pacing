@@ -1,0 +1,152 @@
+transaction_date,investing_entity,fund,security,category,transaction_type,recorded_amount,transaction_currency,scenario,as_of_date,local_amount,local_currency,comment,strategy,sub_strategy,fund_vintage
+1/15/2018,Example Investor LP,Example Buyout Fund I,,Other,Commitment,5000000,USD,Actual,1/15/2018,5000000,USD,Commitment,Corporate Finance/Buyout,Mid-Market,2018
+2/13/2018,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-838125,USD,Actual,2/13/2018,-838125,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2018,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,869403,USD,Actual,3/31/2018,869403,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/13/2018,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-936971,USD,Actual,5/13/2018,-936971,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2018,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1843892,USD,Actual,6/30/2018,1843892,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/16/2018,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-560140,USD,Actual,8/16/2018,-560140,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2018,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2515133,USD,Actual,9/30/2018,2515133,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/24/2018,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-854431,USD,Actual,11/24/2018,-854431,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2018,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,3487466,USD,Actual,12/31/2018,3487466,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+2/19/2019,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-583454,USD,Actual,2/19/2019,-583454,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2019,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,4225184,USD,Actual,3/31/2019,4225184,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/11/2019,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-218436,USD,Actual,5/11/2019,-218436,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2019,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,4659147,USD,Actual,6/30/2019,4659147,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/23/2019,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-330662,USD,Actual,8/23/2019,-330662,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2019,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,5172013,USD,Actual,9/30/2019,5172013,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/12/2019,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-176235,USD,Actual,11/12/2019,-176235,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2019,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,5496764,USD,Actual,12/31/2019,5496764,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+2/24/2020,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-157636,USD,Actual,2/24/2020,-157636,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+2/24/2020,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,1010497,USD,Actual,2/24/2020,1010497,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2020,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,4783334,USD,Actual,3/31/2020,4783334,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/17/2020,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-55762,USD,Actual,5/17/2020,-55762,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+5/17/2020,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,645018,USD,Actual,5/17/2020,645018,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2020,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,4294120,USD,Actual,6/30/2020,4294120,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/22/2020,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-91938,USD,Actual,8/22/2020,-91938,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+8/22/2020,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,488800,USD,Actual,8/22/2020,488800,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2020,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,4074576,USD,Actual,9/30/2020,4074576,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/18/2020,Example Investor LP,Example Buyout Fund I,,Investments,Capital Call,-56760,USD,Actual,11/18/2020,-56760,USD,Purchase - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+11/18/2020,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,678845,USD,Actual,11/18/2020,678845,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2020,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,3623284,USD,Actual,12/31/2020,3623284,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+2/24/2021,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,242237,USD,Actual,2/24/2021,242237,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2021,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,3502400,USD,Actual,3/31/2021,3502400,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/12/2021,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,249924,USD,Actual,5/12/2021,249924,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2021,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,3369531,USD,Actual,6/30/2021,3369531,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/21/2021,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,596915,USD,Actual,8/21/2021,596915,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2021,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2900023,USD,Actual,9/30/2021,2900023,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/15/2021,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,270320,USD,Actual,11/15/2021,270320,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2021,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2706476,USD,Actual,12/31/2021,2706476,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+2/10/2022,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,278583,USD,Actual,2/10/2022,278583,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2022,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2504592,USD,Actual,3/31/2022,2504592,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/23/2022,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,207244,USD,Actual,5/23/2022,207244,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2022,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2419262,USD,Actual,6/30/2022,2419262,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/23/2022,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,252251,USD,Actual,8/23/2022,252251,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2022,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,2257660,USD,Actual,9/30/2022,2257660,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/14/2022,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,455370,USD,Actual,11/14/2022,455370,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2022,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1856205,USD,Actual,12/31/2022,1856205,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+2/11/2023,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,332263,USD,Actual,2/11/2023,332263,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+3/31/2023,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1612382,USD,Actual,3/31/2023,1612382,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+5/16/2023,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,161181,USD,Actual,5/16/2023,161181,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+6/30/2023,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1517795,USD,Actual,6/30/2023,1517795,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+8/11/2023,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,106232,USD,Actual,8/11/2023,106232,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+9/30/2023,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1465106,USD,Actual,9/30/2023,1465106,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+11/13/2023,Example Investor LP,Example Buyout Fund I,,Realizations,Distribution,235252,USD,Actual,11/13/2023,235252,USD,Distribution - Example Buyout Fund I,Corporate Finance/Buyout,Mid-Market,2018
+12/31/2023,Example Investor LP,Example Buyout Fund I,,Reported Market Value,Valuation,1285708,USD,Actual,12/31/2023,1285708,USD,Quarterly valuation,Corporate Finance/Buyout,Mid-Market,2018
+1/15/2020,Example Investor LP,Example Venture Fund II,,Other,Commitment,2000000,USD,Actual,1/15/2020,2000000,USD,Commitment,Venture Capital,Early Stage,2020
+2/17/2020,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-383870,USD,Actual,2/17/2020,-383870,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2020,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,394165,USD,Actual,3/31/2020,394165,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/20/2020,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-527447,USD,Actual,5/20/2020,-527447,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2020,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,962632,USD,Actual,6/30/2020,962632,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/20/2020,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-346087,USD,Actual,8/20/2020,-346087,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2020,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1350662,USD,Actual,9/30/2020,1350662,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/12/2020,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-130146,USD,Actual,11/12/2020,-130146,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2020,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1534405,USD,Actual,12/31/2020,1534405,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+2/19/2021,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-212866,USD,Actual,2/19/2021,-212866,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2021,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1804545,USD,Actual,3/31/2021,1804545,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/21/2021,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-94323,USD,Actual,5/21/2021,-94323,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2021,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1939440,USD,Actual,6/30/2021,1939440,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/11/2021,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-96201,USD,Actual,8/11/2021,-96201,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2021,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,2136124,USD,Actual,9/30/2021,2136124,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/21/2021,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-38411,USD,Actual,11/21/2021,-38411,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2021,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,2243246,USD,Actual,12/31/2021,2243246,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+2/14/2022,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-42317,USD,Actual,2/14/2022,-42317,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+2/14/2022,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,446887,USD,Actual,2/14/2022,446887,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2022,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1942049,USD,Actual,3/31/2022,1942049,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/12/2022,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-27361,USD,Actual,5/12/2022,-27361,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+5/12/2022,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,182823,USD,Actual,5/12/2022,182823,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2022,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1857291,USD,Actual,6/30/2022,1857291,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/16/2022,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-15397,USD,Actual,8/16/2022,-15397,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+8/16/2022,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,204392,USD,Actual,8/16/2022,204392,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2022,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1742154,USD,Actual,9/30/2022,1742154,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/17/2022,Example Investor LP,Example Venture Fund II,,Investments,Capital Call,-17197,USD,Actual,11/17/2022,-17197,USD,Purchase - Example Venture Fund II,Venture Capital,Early Stage,2020
+11/17/2022,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,283209,USD,Actual,11/17/2022,283209,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2022,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1542654,USD,Actual,12/31/2022,1542654,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+2/18/2023,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,135769,USD,Actual,2/18/2023,135769,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2023,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1465671,USD,Actual,3/31/2023,1465671,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/15/2023,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,288146,USD,Actual,5/15/2023,288146,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2023,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1225232,USD,Actual,6/30/2023,1225232,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/13/2023,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,247079,USD,Actual,8/13/2023,247079,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2023,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1036504,USD,Actual,9/30/2023,1036504,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/18/2023,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,58430,USD,Actual,11/18/2023,58430,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2023,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,1027562,USD,Actual,12/31/2023,1027562,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+2/13/2024,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,133452,USD,Actual,2/13/2024,133452,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2024,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,931340,USD,Actual,3/31/2024,931340,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/24/2024,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,152606,USD,Actual,5/24/2024,152606,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2024,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,824740,USD,Actual,6/30/2024,824740,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/22/2024,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,114263,USD,Actual,8/22/2024,114263,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2024,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,734612,USD,Actual,9/30/2024,734612,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/20/2024,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,75707,USD,Actual,11/20/2024,75707,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2024,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,674692,USD,Actual,12/31/2024,674692,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+2/16/2025,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,137819,USD,Actual,2/16/2025,137819,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+3/31/2025,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,565878,USD,Actual,3/31/2025,565878,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+5/10/2025,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,56047,USD,Actual,5/10/2025,56047,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+6/30/2025,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,530921,USD,Actual,6/30/2025,530921,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+8/19/2025,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,66353,USD,Actual,8/19/2025,66353,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+9/30/2025,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,485825,USD,Actual,9/30/2025,485825,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+11/13/2025,Example Investor LP,Example Venture Fund II,,Realizations,Distribution,63717,USD,Actual,11/13/2025,63717,USD,Distribution - Example Venture Fund II,Venture Capital,Early Stage,2020
+12/31/2025,Example Investor LP,Example Venture Fund II,,Reported Market Value,Valuation,442335,USD,Actual,12/31/2025,442335,USD,Quarterly valuation,Venture Capital,Early Stage,2020
+1/15/2021,Example Investor LP,Example Growth Fund III,,Other,Commitment,3000000,USD,Actual,1/15/2021,3000000,USD,Commitment,Growth Equity,Late Stage,2021
+2/10/2021,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-956680,USD,Actual,2/10/2021,-956680,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+3/31/2021,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,996806,USD,Actual,3/31/2021,996806,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+5/23/2021,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-608342,USD,Actual,5/23/2021,-608342,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+6/30/2021,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1663106,USD,Actual,6/30/2021,1663106,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+8/24/2021,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-497307,USD,Actual,8/24/2021,-497307,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+9/30/2021,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2243870,USD,Actual,9/30/2021,2243870,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+11/21/2021,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-150887,USD,Actual,11/21/2021,-150887,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+12/31/2021,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2481706,USD,Actual,12/31/2021,2481706,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+2/19/2022,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-157282,USD,Actual,2/19/2022,-157282,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+3/31/2022,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2750926,USD,Actual,3/31/2022,2750926,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+5/10/2022,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-212833,USD,Actual,5/10/2022,-212833,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+6/30/2022,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,3062873,USD,Actual,6/30/2022,3062873,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+8/15/2022,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-110442,USD,Actual,8/15/2022,-110442,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+9/30/2022,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,3291124,USD,Actual,9/30/2022,3291124,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+11/10/2022,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-70892,USD,Actual,11/10/2022,-70892,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+12/31/2022,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,3488722,USD,Actual,12/31/2022,3488722,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+2/11/2023,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-41914,USD,Actual,2/11/2023,-41914,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+2/11/2023,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,319579,USD,Actual,2/11/2023,319579,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+3/31/2023,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,3293101,USD,Actual,3/31/2023,3293101,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+5/14/2023,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-50698,USD,Actual,5/14/2023,-50698,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+5/14/2023,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,677714,USD,Actual,5/14/2023,677714,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+6/30/2023,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2776107,USD,Actual,6/30/2023,2776107,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+8/20/2023,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-38496,USD,Actual,8/20/2023,-38496,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+8/20/2023,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,449902,USD,Actual,8/20/2023,449902,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+9/30/2023,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2451507,USD,Actual,9/30/2023,2451507,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+11/14/2023,Example Investor LP,Example Growth Fund III,,Investments,Capital Call,-34718,USD,Actual,11/14/2023,-34718,USD,Purchase - Example Growth Fund III,Growth Equity,Late Stage,2021
+11/14/2023,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,346726,USD,Actual,11/14/2023,346726,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+12/31/2023,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2255020,USD,Actual,12/31/2023,2255020,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+2/19/2024,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,325424,USD,Actual,2/19/2024,325424,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+3/31/2024,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,2025333,USD,Actual,3/31/2024,2025333,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+5/14/2024,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,176380,USD,Actual,5/14/2024,176380,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+6/30/2024,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1898401,USD,Actual,6/30/2024,1898401,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+8/11/2024,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,227271,USD,Actual,8/11/2024,227271,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+9/30/2024,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1728597,USD,Actual,9/30/2024,1728597,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+11/21/2024,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,312774,USD,Actual,11/21/2024,312774,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+12/31/2024,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1483797,USD,Actual,12/31/2024,1483797,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+2/14/2025,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,175964,USD,Actual,2/14/2025,175964,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+3/31/2025,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1368340,USD,Actual,3/31/2025,1368340,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+5/15/2025,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,183167,USD,Actual,5/15/2025,183167,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+6/30/2025,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1242530,USD,Actual,6/30/2025,1242530,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+8/21/2025,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,117651,USD,Actual,8/21/2025,117651,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+9/30/2025,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1175244,USD,Actual,9/30/2025,1175244,USD,Quarterly valuation,Growth Equity,Late Stage,2021
+11/22/2025,Example Investor LP,Example Growth Fund III,,Realizations,Distribution,208702,USD,Actual,11/22/2025,208702,USD,Distribution - Example Growth Fund III,Growth Equity,Late Stage,2021
+12/31/2025,Example Investor LP,Example Growth Fund III,,Reported Market Value,Valuation,1023913,USD,Actual,12/31/2025,1023913,USD,Quarterly valuation,Growth Equity,Late Stage,2021

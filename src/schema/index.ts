@@ -1,0 +1,76 @@
+/**
+ * Optional zod schemas, for validating untrusted input at an API boundary or
+ * driving form validation.
+ *
+ * `zod` is an optional peer dependency. Importing the core entry point never
+ * resolves it — only `@osyte/fund-pacing/schema` does.
+ */
+
+import { z } from 'zod'
+
+const rate = z.number().finite().min(0).max(1)
+const rates = z.array(rate)
+
+export const CommitmentBasisScheduleSchema = z.object({
+  basis: z.literal('commitment'),
+  rates,
+})
+
+export const UnfundedBasisScheduleSchema = z.object({
+  basis: z.literal('unfunded'),
+  rates,
+})
+
+export const NavBasisScheduleSchema = z.object({
+  basis: z.literal('nav'),
+  rates,
+})
+
+export const CallScheduleSchema = z.discriminatedUnion('basis', [
+  CommitmentBasisScheduleSchema,
+  UnfundedBasisScheduleSchema,
+])
+
+export const DistributionScheduleSchema = z.discriminatedUnion('basis', [
+  CommitmentBasisScheduleSchema,
+  NavBasisScheduleSchema,
+])
+
+export const ModelConfigSchema = z
+  .object({
+    periodsPerYear: z.union([z.literal(1), z.literal(2), z.literal(4)]),
+    termPeriods: z.number().int().min(1),
+    callablePeriods: z.number().int().min(0),
+    growthRate: z.number().finite().gt(-1),
+    yieldRate: z.number().finite().min(0),
+    bowFactor: z.number().finite().positive(),
+    callSchedule: CallScheduleSchema,
+    distributionSchedule: DistributionScheduleSchema.optional(),
+    terminalLiquidation: z.boolean(),
+    termExtensionYears: z.number().finite().min(0),
+  })
+  .refine((c) => c.callablePeriods <= c.termPeriods, {
+    message: 'callablePeriods cannot exceed termPeriods',
+    path: ['callablePeriods'],
+  })
+  .refine(
+    (c) =>
+      c.callSchedule.basis !== 'commitment' ||
+      c.callSchedule.rates.reduce((a, b) => a + b, 0) <= 1 + 1e-9,
+    { message: 'commitment-basis rates cannot sum above 1', path: ['callSchedule', 'rates'] },
+  )
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
+
+export const FundTermsSchema = z.object({
+  commitment: z.number().int().positive(),
+  startDate: isoDate,
+})
+
+export const TransactionSchema = z.object({
+  date: isoDate,
+  type: z.enum(['call', 'distribution', 'nav']),
+  amount: z.number().int().min(0),
+})
+
+export const TransactionsSchema = z.array(TransactionSchema)

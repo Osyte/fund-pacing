@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.vitest-reports/
+
+# Real client data carried over from the internal Python project. Never commit it.
+fixtures/raw_historical_private_cf.csv
