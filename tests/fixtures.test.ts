@@ -14,11 +14,13 @@ import { buildSchedule, type ModelConfig, project } from '../src/index.js'
 const FOUR_YEAR: ModelConfig = {
   periodsPerYear: 4,
   termPeriods: 16,
-  callablePeriods: 4,
   growthRate: 0.15,
   yieldRate: 0,
   bowFactor: 2.5,
-  callSchedule: { basis: 'commitment', rates: [0.25, 0.25, 0.25, 0.25] },
+  callSchedule: {
+    basis: 'commitment',
+    rates: [0.25, 0.25, 0.25, 0.25, ...Array(12).fill(0)],
+  },
   terminalLiquidation: true,
   termExtensionYears: 3,
 }
@@ -34,16 +36,16 @@ describe('4-year quarterly example (documentation §"Examples and Test Cases")',
   })
 
   it('calls 25% in each of the first four quarters', () => {
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 0; i < 4; i++) {
       expect(rows[i]?.called).toBe(COMMITMENT / 4)
     }
-    expect(rows[5]?.called).toBe(0)
+    expect(rows[4]?.called).toBe(0)
   })
 
-  it('applies rates[0] in period 1 — the off-by-one is gone', () => {
+  it('applies rates[0] in period 0', () => {
     const schedule = buildSchedule(FOUR_YEAR)
-    expect(schedule[1]?.callRate).toBe(0.25)
-    expect(schedule[0]?.callRate).toBe(0)
+    expect(schedule[0]?.callRate).toBe(0.25)
+    expect(schedule[4]?.callRate).toBe(0)
   })
 
   it('generates true quarter-end dates', () => {
@@ -66,11 +68,13 @@ describe('unfunded basis leaves a residual, by design', () => {
       ...FOUR_YEAR,
       periodsPerYear: 1,
       termPeriods: 12,
-      callablePeriods: 5,
-      callSchedule: { basis: 'unfunded', rates: [0.3, 0.35, 0.4, 0.35, 0.2] },
+      callSchedule: {
+        basis: 'unfunded',
+        rates: [0.3, 0.35, 0.4, 0.35, 0.2, ...Array(7).fill(0)],
+      },
     }
     const schedule = buildSchedule(config)
-    const called = schedule[5]?.calledFraction ?? 0
+    const called = schedule[4]?.calledFraction ?? 0
     // 1 - (0.70 x 0.65 x 0.60 x 0.65 x 0.80)
     expect(called).toBeCloseTo(0.85804, 5)
   })
@@ -80,11 +84,10 @@ describe('geometric compounding (spec D7)', () => {
   const config: ModelConfig = {
     periodsPerYear: 4,
     termPeriods: 4,
-    callablePeriods: 1,
     growthRate: 0.2,
     yieldRate: 0,
     bowFactor: 2.5,
-    callSchedule: { basis: 'commitment', rates: [1] },
+    callSchedule: { basis: 'commitment', rates: [1, 0, 0, 0] },
     // Explicit zero distributions, so NAV growth is observable in isolation.
     distributionSchedule: { basis: 'nav', rates: [0, 0, 0, 0] },
     terminalLiquidation: false,
@@ -94,9 +97,9 @@ describe('geometric compounding (spec D7)', () => {
   it('NAV compounds at the geometric per-period rate, not annual/4', () => {
     const rows = project(config, { commitment: COMMITMENT, startDate: '2024-03-31' })
 
-    // The full commitment lands in period 1 and then grows for periods 2-4.
+    // The full commitment lands in period 0 and then grows for periods 1-3.
     const expected = COMMITMENT * 1.2 ** (3 / 4)
-    expect(rows[4]?.nav).toBeCloseTo(expected, -2)
+    expect(rows[3]?.nav).toBeCloseTo(expected, -2)
 
     // Simple division would have compounded to a materially higher figure.
     const simple = COMMITMENT * (1 + 0.2 / 4) ** 3

@@ -105,16 +105,16 @@ function runProjection(
   fund: FundTerms,
   buckets: Map<number, Bucket>,
   lastActualIndex: number,
-  effectiveTerm: number,
+  effectiveTermPeriods: number,
 ): CashFlowPeriod[] {
   const growth = perPeriodRate(config.growthRate, config.periodsPerYear)
-  const periodEnds = periodEndDates(fund.startDate, config.periodsPerYear, effectiveTerm + 1)
+  const periodEnds = periodEndDates(fund.startDate, config.periodsPerYear, effectiveTermPeriods)
   const precomputedCalls = precomputeCommitmentCalls(config, fund.commitment, roundMinor)
 
   const out: CashFlowPeriod[] = []
   let state: PeriodState = ZERO_STATE
 
-  for (let t = 0; t <= effectiveTerm; t++) {
+  for (let t = 0; t < effectiveTermPeriods; t++) {
     const periodEnd = periodEnds[t] ?? ''
     const isActual = t <= lastActualIndex
 
@@ -136,12 +136,7 @@ function runProjection(
       continue
     }
 
-    if (t === 0) {
-      out.push(row(0, periodEnd, 'forecast', 0, 0, state, fund.commitment))
-      continue
-    }
-
-    const distribution = distributionAt(config, t, effectiveTerm)
+    const distribution = distributionAt(config, t, effectiveTermPeriods)
     const result = stepPeriod(state, {
       commitment: fund.commitment,
       called: callAmountAt(
@@ -155,7 +150,7 @@ function runProjection(
       distributionRate: distribution.rate,
       distributionBasis: distribution.basis,
       growthPerPeriod: growth,
-      isTerminal: t === effectiveTerm,
+      isTerminal: t === effectiveTermPeriods - 1,
       terminalLiquidation: config.terminalLiquidation,
       round: roundMinor,
     })
@@ -188,14 +183,14 @@ export function reproject(
 
   // Term extension: only actuals can outlive the term (spec D5).
   const extension = Math.round(config.termExtensionYears * config.periodsPerYear)
-  const effectiveTerm =
-    lastActualIndex >= config.termPeriods ? lastActualIndex + extension : config.termPeriods
+  const effectiveTermPeriods =
+    lastActualIndex >= config.termPeriods ? lastActualIndex + 1 + extension : config.termPeriods
 
   const baseline = runProjection(config, fund, new Map(), -1, config.termPeriods)
   const revised =
     lastActualIndex < 0
       ? baseline
-      : runProjection(config, fund, buckets, lastActualIndex, effectiveTerm)
+      : runProjection(config, fund, buckets, lastActualIndex, effectiveTermPeriods)
 
   const overlap = Math.min(baseline.length, revised.length)
   const variance: VariancePeriod[] = []

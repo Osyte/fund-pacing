@@ -4,11 +4,13 @@ import { type ModelConfig, project, reproject, validateConfig } from '../src/ind
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,
   termPeriods: 20,
-  callablePeriods: 8,
   growthRate: 0.15,
   yieldRate: 0,
   bowFactor: 2.5,
-  callSchedule: { basis: 'unfunded', rates: [0.25, 0.25, 0.25, 0.25, 0.2, 0.2, 0.2, 0.2] },
+  callSchedule: {
+    basis: 'unfunded',
+    rates: [0.25, 0.25, 0.25, 0.25, 0.2, 0.2, 0.2, 0.2, ...Array(12).fill(0)],
+  },
   terminalLiquidation: true,
   termExtensionYears: 3,
 }
@@ -34,10 +36,10 @@ describe('reproject', () => {
     const { revised } = reproject(CONFIG, FUND, actuals)
 
     // Actuals end at index 3, so the next forecast period is 4 and must use
-    // rates[3] — resuming at fund age, not restarting at rates[0].
+    // rates[4] — resuming at fund age, not restarting at rates[0].
     const next = revised[4]
     const unfundedBefore = revised[3]?.unfunded ?? 0
-    expect(next?.called).toBe(Math.round(0.25 * unfundedBefore))
+    expect(next?.called).toBe(Math.round(0.2 * unfundedBefore))
 
     // Restarting would have applied rates[0] to a materially different base.
     const restarted = revised[4]?.called === Math.round(0.25 * 5_000_000_00)
@@ -96,7 +98,7 @@ describe('validation', () => {
   it('rejects percent-valued rates rather than coercing them', () => {
     const result = validateConfig({
       ...CONFIG,
-      callSchedule: { basis: 'commitment', rates: [25, 25] },
+      callSchedule: { basis: 'commitment', rates: [25, 25, ...Array(18).fill(0)] },
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -108,11 +110,31 @@ describe('validation', () => {
   it('rejects commitment-basis rates summing above 1', () => {
     const result = validateConfig({
       ...CONFIG,
-      callSchedule: { basis: 'commitment', rates: [0.6, 0.6] },
+      callSchedule: { basis: 'commitment', rates: [0.6, 0.6, ...Array(18).fill(0)] },
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.issues.some((i) => i.code === 'RATE_SUM_EXCEEDS_COMMITMENT')).toBe(true)
+    }
+  })
+
+  it('rejects call schedules that do not cover exactly the modeled term', () => {
+    const tooLong = validateConfig({
+      ...CONFIG,
+      callSchedule: { basis: 'commitment', rates: [0.5, ...Array(20).fill(0)] },
+    })
+    expect(tooLong.ok).toBe(false)
+    if (!tooLong.ok) {
+      expect(tooLong.issues.some((i) => i.code === 'SCHEDULE_TOO_LONG')).toBe(true)
+    }
+
+    const tooShort = validateConfig({
+      ...CONFIG,
+      callSchedule: { basis: 'commitment', rates: [0.5, ...Array(18).fill(0)] },
+    })
+    expect(tooShort.ok).toBe(false)
+    if (!tooShort.ok) {
+      expect(tooShort.issues.some((i) => i.code === 'SCHEDULE_TOO_SHORT')).toBe(true)
     }
   })
 
