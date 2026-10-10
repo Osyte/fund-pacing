@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildSchedule, project, reproject, type ModelConfig } from '../src/index.js'
+import { buildSchedule, type ModelConfig, project, reproject } from '../src/index.js'
 
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,

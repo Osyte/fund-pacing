@@ -5,13 +5,11 @@ const frequency = fc.constantFrom<Frequency>(1, 2, 4)
 
 /** Rates that always satisfy the commitment-basis sum constraint. */
 function ratesUpToOne(maxLength: number): fc.Arbitrary<number[]> {
-  return fc
-    .array(fc.integer({ min: 0, max: 1000 }), { minLength: 1, maxLength })
-    .map((weights) => {
-      const total = weights.reduce((a, b) => a + b, 0)
-      if (total === 0) return weights.map(() => 0)
-      return weights.map((w) => w / total)
-    })
+  return fc.array(fc.integer({ min: 0, max: 1000 }), { minLength: 1, maxLength }).map((weights) => {
+    const total = weights.reduce((a, b) => a + b, 0)
+    if (total === 0) return weights.map(() => 0)
+    return weights.map((w) => w / total)
+  })
 }
 
 export const arbConfig: fc.Arbitrary<ModelConfig> = fc
@@ -53,10 +51,7 @@ export const arbStartDate: fc.Arbitrary<string> = fc
     m: fc.integer({ min: 1, max: 12 }),
     d: fc.integer({ min: 1, max: 28 }),
   })
-  .map(
-    ({ y, m, d }) =>
-      `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
-  )
+  .map(({ y, m, d }) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
 
 export const arbTransactions: fc.Arbitrary<Transaction[]> = fc.array(
   fc.record({

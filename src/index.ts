@@ -10,10 +10,10 @@
  * Stateless and I/O-free. Every input and output is plain JSON.
  */
 
-export { buildSchedule } from './engine/schedule.js'
 export { project, reproject } from './engine/reproject.js'
-export { validateConfig } from './internal/guards.js'
+export { buildSchedule } from './engine/schedule.js'
 export { PacingConfigError, PacingError, PacingInputError } from './errors.js'
+export { validateConfig } from './internal/guards.js'
 
 export type {
   CallSchedule,
