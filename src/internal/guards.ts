@@ -23,6 +23,10 @@ function isFinitePositive(n: unknown): n is number {
   return typeof n === 'number' && Number.isFinite(n) && n > 0
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 /**
  * Non-throwing. Collects every problem rather than failing on the first, so a
  * form can display them all at once.
@@ -33,76 +37,87 @@ export function validateConfig(config: ModelConfig): ValidationResult {
     issues.push({ path, code, message })
   }
 
-  if (config.periodsPerYear !== 1 && config.periodsPerYear !== 2 && config.periodsPerYear !== 4) {
+  const input: unknown = config
+  if (!isRecord(input)) {
+    add('config', 'INVALID_CONFIG', 'must be an object')
+    return { ok: false, issues }
+  }
+
+  const termPeriods = input.termPeriods
+
+  if (input.periodsPerYear !== 1 && input.periodsPerYear !== 2 && input.periodsPerYear !== 4) {
     add('periodsPerYear', 'INVALID_FREQUENCY', 'must be 1, 2, or 4')
   }
-  if (!isInt(config.termPeriods) || config.termPeriods < 1) {
+  if (!isInt(termPeriods) || termPeriods < 1) {
     add('termPeriods', 'INVALID_TERM', 'must be an integer >= 1')
   }
-  if (typeof config.growthRate !== 'number' || !Number.isFinite(config.growthRate)) {
+  if (typeof input.growthRate !== 'number' || !Number.isFinite(input.growthRate)) {
     add('growthRate', 'INVALID_RATE', 'must be a finite number')
-  } else if (config.growthRate <= -1) {
+  } else if (input.growthRate <= -1) {
     add('growthRate', 'RATE_OUT_OF_RANGE', 'must be greater than -1')
   }
-  if (typeof config.yieldRate !== 'number' || !Number.isFinite(config.yieldRate)) {
+  if (typeof input.yieldRate !== 'number' || !Number.isFinite(input.yieldRate)) {
     add('yieldRate', 'INVALID_RATE', 'must be a finite number')
-  } else if (config.yieldRate < 0) {
+  } else if (input.yieldRate < 0) {
     add('yieldRate', 'RATE_OUT_OF_RANGE', 'must be >= 0')
   }
-  if (!isFinitePositive(config.bowFactor)) {
+  if (!isFinitePositive(input.bowFactor)) {
     add('bowFactor', 'INVALID_BOW_FACTOR', 'must be a finite number > 0')
   }
-  if (typeof config.terminalLiquidation !== 'boolean') {
+  if (typeof input.terminalLiquidation !== 'boolean') {
     add('terminalLiquidation', 'INVALID_FLAG', 'must be a boolean')
   }
   if (
-    typeof config.termExtensionYears !== 'number' ||
-    !Number.isFinite(config.termExtensionYears) ||
-    config.termExtensionYears < 0
+    typeof input.termExtensionYears !== 'number' ||
+    !Number.isFinite(input.termExtensionYears) ||
+    input.termExtensionYears < 0
   ) {
     add('termExtensionYears', 'INVALID_TERM_EXTENSION', 'must be a finite number >= 0')
   }
 
   const callScheduleOptions: ScheduleValidationOptions =
-    isInt(config.termPeriods) && config.termPeriods >= 1
-      ? { expectedLength: config.termPeriods, requireCommitmentSumOne: true }
+    isInt(termPeriods) && termPeriods >= 1
+      ? { expectedLength: termPeriods, requireCommitmentSumOne: true }
       : { requireCommitmentSumOne: true }
   validateSchedule(
-    config.callSchedule,
+    input.callSchedule,
     'callSchedule',
     ['commitment', 'unfunded'],
     add,
     callScheduleOptions,
   )
-  if (config.distributionSchedule) {
-    validateSchedule(
-      config.distributionSchedule,
-      'distributionSchedule',
-      ['commitment', 'nav'],
-      add,
-    )
+  if ('distributionSchedule' in input && input.distributionSchedule !== undefined) {
+    validateSchedule(input.distributionSchedule, 'distributionSchedule', ['commitment', 'nav'], add)
   }
 
   return issues.length === 0 ? { ok: true } : { ok: false, issues }
 }
 
 function validateSchedule(
-  schedule: { basis: string; rates: readonly number[] },
+  schedule: unknown,
   path: string,
   allowed: readonly string[],
   add: (path: string, code: string, message: string) => void,
   options: ScheduleValidationOptions = {},
 ): void {
-  if (!allowed.includes(schedule.basis)) {
+  if (!isRecord(schedule)) {
+    add(path, 'INVALID_SCHEDULE', 'must be an object')
+    return
+  }
+
+  const basis = schedule.basis
+  const rates = schedule.rates
+
+  if (typeof basis !== 'string' || !allowed.includes(basis)) {
     add(`${path}.basis`, 'INVALID_BASIS', `must be one of ${allowed.join(' | ')}`)
   }
-  if (!Array.isArray(schedule.rates)) {
+  if (!Array.isArray(rates)) {
     add(`${path}.rates`, 'INVALID_RATES', 'must be an array of numbers')
     return
   }
 
   let sum = 0
-  schedule.rates.forEach((rate, i) => {
+  rates.forEach((rate, i) => {
     if (typeof rate !== 'number' || !Number.isFinite(rate)) {
       add(`${path}.rates[${i}]`, 'INVALID_RATE', 'must be a finite number')
       return
@@ -117,9 +132,8 @@ function validateSchedule(
     sum += rate
   })
 
-  if (options.expectedLength !== undefined && schedule.rates.length !== options.expectedLength) {
-    const code =
-      schedule.rates.length > options.expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
+  if (options.expectedLength !== undefined && rates.length !== options.expectedLength) {
+    const code = rates.length > options.expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
     add(
       `${path}.rates`,
       code,
@@ -127,7 +141,7 @@ function validateSchedule(
     )
   }
 
-  if (schedule.basis === 'commitment') {
+  if (basis === 'commitment') {
     if (sum > 1 + RATE_SUM_EPSILON) {
       add(
         `${path}.rates`,

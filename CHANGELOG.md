@@ -9,6 +9,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Commitment-basis `reproject` forecasts now rescale remaining calls after actuals so total called capital returns to commitment.
 - Commitment-basis call schedules now must sum to 1.
 - Added validation errors for call schedules whose length does not match `termPeriods`.
+- Hardened `validateConfig` so malformed runtime config shapes return validation issues instead of throwing `TypeError`.
 
 ## 0.1.0
 
