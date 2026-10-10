@@ -1,5 +1,5 @@
 /**
- * Spec §5 — the eight correctness requirements.
+ * Spec §5 — the nine correctness requirements.
  *
  * These are written in the spec as universally-quantified statements, so they
  * are verified that way: fast-check generates arbitrary valid configs and
@@ -10,6 +10,7 @@
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { buildSchedule, project, reproject } from '../src/index.js'
+import { periodEndDates } from '../src/internal/calendar.js'
 import { arbCommitment, arbConfig, arbStartDate, arbTransactions } from './arbitraries.js'
 
 const RUNS = { numRuns: 300 }
@@ -156,6 +157,46 @@ describe('spec §5 invariants', () => {
           if (config.callSchedule.rates[r.index] === 0) expect(r.called).toBe(0)
         }
       }),
+      RUNS,
+    )
+  })
+
+  it('#9 commitment-basis reprojections preserve full commitment after actuals', () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 2, max: 24 }),
+        arbCommitment,
+        arbStartDate,
+        fc.integer({ min: 0, max: 22 }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        (termPeriods, commitment, startDate, rawActualIndex, actualFraction) => {
+          const actualIndex = rawActualIndex % (termPeriods - 1)
+          const baseRate = 1 / termPeriods
+          const rates = Array(termPeriods).fill(baseRate)
+          rates[termPeriods - 1] = 1 - baseRate * (termPeriods - 1)
+          const config = {
+            periodsPerYear: 4 as const,
+            termPeriods,
+            growthRate: 0,
+            yieldRate: 0,
+            bowFactor: 1,
+            callSchedule: { basis: 'commitment' as const, rates },
+            distributionSchedule: { basis: 'nav' as const, rates: Array(termPeriods).fill(0) },
+            terminalLiquidation: false,
+            termExtensionYears: 0,
+          }
+
+          const actualDate = periodEndDates(startDate, config.periodsPerYear, actualIndex + 1)[
+            actualIndex
+          ]
+          const actualCalled = Math.round(commitment * actualFraction)
+          const { revised } = reproject(config, { commitment, startDate }, [
+            { date: actualDate ?? startDate, type: 'call', amount: actualCalled },
+          ])
+
+          expect(revised.at(-1)?.calledCumulative).toBe(commitment)
+        },
+      ),
       RUNS,
     )
   })

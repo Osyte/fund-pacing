@@ -17,6 +17,20 @@ const CONFIG: ModelConfig = {
 
 const FUND = { commitment: 5_000_000_00, startDate: '2024-01-15' }
 
+const COMMITMENT_CONFIG: ModelConfig = {
+  periodsPerYear: 4,
+  termPeriods: 4,
+  growthRate: 0,
+  yieldRate: 0,
+  bowFactor: 1,
+  callSchedule: { basis: 'commitment', rates: [0.25, 0.25, 0.25, 0.25] },
+  distributionSchedule: { basis: 'nav', rates: [0, 0, 0, 0] },
+  terminalLiquidation: false,
+  termExtensionYears: 0,
+}
+
+const SMALL_FUND = { commitment: 10_000, startDate: '2024-01-15' }
+
 describe('reproject', () => {
   it('marks periods up to the last transaction as actual', () => {
     const { revised, asOf } = reproject(CONFIG, FUND, [
@@ -91,6 +105,34 @@ describe('reproject', () => {
     const a = reproject(CONFIG, FUND, txs)
     const b = reproject(CONFIG, FUND, [...txs].reverse())
     expect(a.revised).toEqual(b.revised)
+  })
+
+  it('rescales commitment-basis forecast calls when actual calls are ahead', () => {
+    const { revised } = reproject(COMMITMENT_CONFIG, SMALL_FUND, [
+      { date: '2024-03-31', type: 'call', amount: 6_000 },
+    ])
+
+    expect(revised.map((p) => p.called)).toEqual([6_000, 1_333, 1_333, 1_334])
+    expect(revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
+  })
+
+  it('rescales commitment-basis forecast calls when actual calls are behind', () => {
+    const { revised } = reproject(COMMITMENT_CONFIG, SMALL_FUND, [
+      { date: '2024-03-31', type: 'call', amount: 1_000 },
+    ])
+
+    expect(revised.map((p) => p.called)).toEqual([1_000, 3_000, 3_000, 3_000])
+    expect(revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
+  })
+
+  it('does not forecast more commitment-basis calls after actuals exceed commitment', () => {
+    const { revised } = reproject(COMMITMENT_CONFIG, SMALL_FUND, [
+      { date: '2024-03-31', type: 'call', amount: 11_000 },
+    ])
+
+    expect(revised.map((p) => p.called)).toEqual([11_000, 0, 0, 0])
+    expect(revised.at(-1)?.calledCumulative).toBe(11_000)
+    expect(revised.at(-1)?.overcalled).toBe(true)
   })
 })
 

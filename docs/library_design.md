@@ -172,7 +172,7 @@ All of these are dev-time only and contribute nothing to consumer bundles.
 
 Because the spec establishes that the test suite *is* the specification, tests are structured in four distinct layers rather than one undifferentiated folder.
 
-**Property tests (`fast-check`) — the eight invariants.** Spec §5 is written as universally-quantified statements, so they should be verified that way. Generate arbitrary valid configs and assert conservation, non-negative NAV, one-to-one schedule indexing, and so on across thousands of cases. This is where the real assurance comes from — example tests would only confirm the cases we already thought of.
+**Property tests (`fast-check`) — the nine invariants.** Spec §5 is written as universally-quantified statements, so they should be verified that way. Generate arbitrary valid configs and assert conservation, non-negative NAV, one-to-one schedule indexing, commitment-basis reprojection, and so on across thousands of cases. This is where the real assurance comes from — example tests would only confirm the cases we already thought of.
 
 **Golden fixtures — the corrected examples.** The `data/` CSVs, with expected values derived from corrected math. Spec §7 is explicit that matching current Python output would mean failure; these fixtures are the guard against accidentally reintroducing a ported bug.
 

@@ -50,6 +50,41 @@ export function precomputeCommitmentCalls(
 }
 
 /**
+ * After actuals, commitment-basis forecasts preserve the full commitment by
+ * scaling the remaining original forecast calls to the remaining commitment.
+ */
+export function rescaleCommitmentCallsAfterActuals(
+  config: ModelConfig,
+  commitment: number,
+  actualCalledCumulative: number,
+  firstForecastIndex: number,
+  precomputed: readonly number[] | undefined,
+  round: RoundFn,
+): readonly number[] | undefined {
+  if (config.callSchedule.basis !== 'commitment' || !precomputed || firstForecastIndex <= 0) {
+    return precomputed
+  }
+
+  const adjusted = [...precomputed]
+  const start = Math.max(0, firstForecastIndex)
+  const weights = adjusted.slice(start)
+  const remainingForecastTotal = weights.reduce((a, b) => a + b, 0)
+
+  for (let i = start; i < adjusted.length; i++) {
+    adjusted[i] = 0
+  }
+  if (remainingForecastTotal === 0) return adjusted
+
+  const remainingCommitment = Math.max(0, commitment - actualCalledCumulative)
+  const scaled = allocate(remainingCommitment, weights, round)
+  for (let i = 0; i < scaled.length; i++) {
+    adjusted[start + i] = scaled[i] ?? 0
+  }
+
+  return adjusted
+}
+
+/**
  * Capital called in a zero-based period.
  *
  * For unfunded basis the remaining commitment is floored at zero: once a fund

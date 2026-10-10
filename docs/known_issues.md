@@ -19,9 +19,9 @@ Until this is settled, compare configurations only at the same frequency. See `s
 
 Period 0 is the first modeled cash-flow period containing `startDate`. `callSchedule.rates[0]` now applies in period 0, and output indices run from `0` through `termPeriods - 1`. There is no separate inception-only row.
 
-### K3 — Commitment-basis call forecasts do not resume from actual unfunded
+### K3 — Resolved: commitment-basis forecasts rescale after actuals
 
-After actuals, an `unfunded`-basis schedule resumes from the actual unfunded balance as spec D2 describes. A `commitment`-basis schedule keeps its original allocation, so a fund that has already called 100% is still forecast the remaining scheduled shares and ends overcalled. Whether commitment-basis forecasts should cap at, or rescale to, the remaining unfunded is open.
+After actuals, `commitment`-basis forecast calls are rescaled across the remaining original forecast calls so cumulative called capital returns to 100% of commitment. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to use actual remaining unfunded commitment.
 
 ### K4 — Resolved: call schedules must cover the full term
 
