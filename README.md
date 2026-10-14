@@ -92,6 +92,7 @@ const { baseline, revised, variance, asOf } = reproject(
 - Periods up to the last transaction are `source: 'actual'` and reproduce the supplied amounts verbatim.
 - A reported `nav` overrides the modelled one and becomes the base for everything forward.
 - The forecast resumes at the fund's actual age, from actual unfunded, NAV, and PIC.
+- Commitment-basis call forecasts are rescaled after actuals so total called capital returns to commitment, unless actual calls already exceed commitment.
 - `baseline` is the untouched T=0 forecast, so forecast-accuracy tracking is a first-class output rather than something you reconstruct.
 
 ## Conventions
@@ -108,14 +109,14 @@ These are enforced, not assumed. Getting them wrong is the single largest source
 **Schedule basis is explicit and never inferred.** A rate can mean two different things, and conflating them silently under-calls by a third:
 
 ```ts
-callSchedule: { basis: 'commitment', rates: [...] }  // share of total commitment
+callSchedule: { basis: 'commitment', rates: [...] }  // shares of total commitment; must sum to 1
 callSchedule: { basis: 'unfunded',   rates: [...] }  // rate on remaining unfunded
 
 distributionSchedule: { basis: 'commitment', rates: [...] }  // share of commitment
 distributionSchedule: { basis: 'nav',        rates: [...] }  // fraction of prevailing NAV
 ```
 
-`callSchedule.rates` must contain exactly one rate per `termPeriods` period. Use explicit `0` rates for periods with no calls.
+`callSchedule.rates` must contain exactly one rate per `termPeriods` period. Use explicit `0` rates for periods with no calls. Commitment-basis call schedules must sum to `1`.
 
 Note that an `unfunded`-basis schedule generally does *not* call 100% — a `[0.30, 0.35, 0.40, 0.35, 0.20]` profile leaves 14.2% permanently uncalled. That is intended and tested.
 
@@ -170,13 +171,13 @@ npm run verify        # all of the above
 
 ### Tests are the specification
 
-The prior Python implementation and its documentation disagree on units, defaults, and curve shape, so there is no authoritative source to port from. `docs/library_spec.md` §5 states eight invariants; `tests/invariants.test.ts` verifies them as *properties* over generated configs rather than hand-picked examples. This is not incidental — the property tests caught two real bugs on their first run (per-period rounding drift, and negative calls after overcalling) that example-based tests would have missed.
+The prior Python implementation and its documentation disagree on units, defaults, and curve shape, so there is no authoritative source to port from. `docs/library_spec.md` §5 states nine invariants; `tests/invariants.test.ts` verifies them as *properties* over generated configs rather than hand-picked examples. This is not incidental — the property tests caught two real bugs on their first run (per-period rounding drift, and negative calls after overcalling) that example-based tests would have missed.
 
 `tests/determinism.test.ts` runs under both Node and jsdom against shared snapshots, so a timezone- or locale-sensitive divergence fails the build.
 
 ## Documentation
 
-- [`docs/library_spec.md`](docs/library_spec.md) — product spec: purpose, domain model, API, the eight invariants, and the logged decisions D1–D8
+- [`docs/library_spec.md`](docs/library_spec.md) — product spec: purpose, domain model, API, the nine invariants, and the logged decisions
 - [`docs/library_design.md`](docs/library_design.md) — technical design: module structure, dependency rationale, toolchain
 - [`docs/known_issues.md`](docs/known_issues.md) — open model conventions and known validation gaps, numbered K1–K9
 - [`fixtures/`](fixtures/) — schedule examples and a synthetic transaction history, for regression fixtures
