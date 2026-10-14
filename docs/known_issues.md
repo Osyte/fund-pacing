@@ -1,6 +1,6 @@
 # Known issues and open conventions
 
-Behaviour that is deliberate but undocumented elsewhere, or that has been identified as needing a decision before 1.0. Each item is stable in the current release; none will change without a spec decision and a changelog entry.
+Behaviour that is deliberate but undocumented elsewhere, or that has been identified as needing a decision before 1.0. Each open item is stable in the current release; none will change without a spec decision and a changelog entry. Resolved items are retained temporarily for release-triage traceability.
 
 ## Model conventions
 
@@ -15,17 +15,17 @@ Behaviour that is deliberate but undocumented elsewhere, or that has been identi
 
 Until this is settled, compare configurations only at the same frequency. See `src/engine/rates.ts`, `distributionAt`.
 
-### K2 — The first call lands one period after the start
+### K2 — Resolved: first calls can land in period 0
 
-Period 0 is the period that contains `startDate` and it never forecasts a call, so `callSchedule.rates[0]` applies in period 1. A fund starting 2024-03-31 with a 25% first-quarter call sees that call on 2024-06-30. The four-year fixture's dates put it on 3/31/2024. The amounts are right; the alignment is a convention that needs an explicit decision.
+Period 0 is the first modeled cash-flow period containing `startDate`. `callSchedule.rates[0]` now applies in period 0, and output indices run from `0` through `termPeriods - 1`. There is no separate inception-only row.
 
 ### K3 — Commitment-basis call forecasts do not resume from actual unfunded
 
 After actuals, an `unfunded`-basis schedule resumes from the actual unfunded balance as spec D2 describes. A `commitment`-basis schedule keeps its original allocation, so a fund that has already called 100% is still forecast the remaining scheduled shares and ends overcalled. Whether commitment-basis forecasts should cap at, or rescale to, the remaining unfunded is open.
 
-### K4 — Schedules longer than the callable window are truncated silently
+### K4 — Resolved: call schedules must cover the full term
 
-Rates beyond `callablePeriods` are ignored. A commitment-basis schedule of four 25% rates with `callablePeriods: 2` validates and calls 50%. A `SCHEDULE_TOO_LONG` validation issue is planned.
+`callablePeriods` has been removed. `callSchedule.rates` must contain exactly `termPeriods` entries; periods with no calls must be represented by explicit `0` rates. Invalid lengths return `SCHEDULE_TOO_LONG` or `SCHEDULE_TOO_SHORT` from `validateConfig`, and engine entry points reject them.
 
 ### K5 — Transactions dated before `startDate` bucket into period 0
 

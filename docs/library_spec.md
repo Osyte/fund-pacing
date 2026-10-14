@@ -55,7 +55,7 @@ These are non-negotiable and enforced at the type level.
 | Dates | ISO `YYYY-MM-DD` string | JSON-safe; no timezone drift |
 | Money | Integer **minor units** (cents) as `number` | Exact to ~$90 trillion; JSON-safe; avoids float drift over 40+ compounding periods |
 | Rates & fractions | `number`, decimal (`0.25` = 25%) | Never percent-valued. Values > 1 are rejected, not coerced |
-| Periods | Zero-indexed integer; period 0 is inception | — |
+| Periods | Zero-indexed integer; period 0 is the first modeled cash-flow period containing `startDate` | — |
 
 **Rate inputs are decimals, full stop.** The current Python coerces with `r/100 if r > 1 else r`, which is ambiguous at exactly `1.0` (100%? or 1%?). The library rejects out-of-range values with a clear error instead of guessing.
 
@@ -82,6 +82,8 @@ type DistributionSchedule =
 
 All four are supported. None is inferred. The `basis` field is required.
 
+`callSchedule.rates` must contain exactly one rate per modeled term period. Periods with no forecast calls are represented by explicit `0` rates rather than a separate callable-window field.
+
 ### Rate conversion
 
 Annual rates convert to per-period **geometrically** (D7): `perPeriod = (1 + annual)^(1/periodsPerYear) − 1`. This is the only convention under which the periods actually compound to the stated annual rate. It applies to both `growthRate` and `yieldRate`.
@@ -93,7 +95,6 @@ Annual rates convert to per-period **geometrically** (D7): `perPeriod = (1 + ann
 interface ModelConfig {
   periodsPerYear: 1 | 2 | 4;
   termPeriods: number;             // total periods modelled (fund life × periodsPerYear)
-  callablePeriods: number;         // investment period; calls are zero after this
   growthRate: number;              // per annum, decimal — converted geometrically (D7)
   yieldRate: number;               // per annum, decimal — converted geometrically (D7)
   bowFactor: number;               // distribution curve shape; any value > 0 (D1)
@@ -226,7 +227,7 @@ Because the prior documentation and the prior code disagree on units, defaults, 
 5. **NAV is non-negative** in every period, under every valid config.
 6. **Actuals are reproduced verbatim.** Periods marked `source: 'actual'` report exactly the transaction amounts supplied — the model never overwrites an observed figure.
 7. **Isomorphic determinism.** Identical inputs produce byte-identical `JSON.stringify` output under Node and in a browser.
-8. **Calls stop after the investment period.** `callRate` is 0 for every period beyond `callablePeriods`.
+8. **Call schedules map one-to-one onto modeled periods.** `callSchedule.rates.length === termPeriods`; period `i` consumes `rates[i]`, including period 0, and no-call periods are explicit zeros.
 
 ---
 
@@ -285,6 +286,18 @@ The call-rate basis ambiguity (§3) applies equally to distributions, which the 
 Recallable capital and recycling mean a real fund can report cumulative calls above its commitment, and `reproject` consumes actual transactions. Clamping `unfunded` at zero (as the Python does) would break the conservation invariant.
 
 **Decision:** `unfunded` may go negative, which is meaningful — capital called beyond commitment. Conservation (§5.4) stays exact. `CashFlowPeriod.overcalled` flags the condition for the UI.
+
+### D9 — Period-zero call alignment
+
+`termPeriods` is the number of modeled cash-flow periods. Output indices run from `0` to `termPeriods - 1`, and period 0 is the first modeled cash-flow period containing `startDate`.
+
+**Decision:** `callSchedule.rates[0]` applies to period 0. There is no extra inception-only output row.
+
+### D10 — Full-term call schedules
+
+The prior `callablePeriods` field created two sources of truth: a schedule array and a separate window that could silently ignore user-provided rates.
+
+**Decision:** remove `callablePeriods`. `callSchedule.rates` must be exactly `termPeriods` long, with explicit `0` entries for periods in which no capital is forecast to be called. Invalid lengths fail validation and engine entry points reject them.
 
 ---
 

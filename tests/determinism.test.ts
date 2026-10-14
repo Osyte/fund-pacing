@@ -12,13 +12,12 @@ import { buildSchedule, type ModelConfig, project, reproject } from '../src/inde
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,
   termPeriods: 40,
-  callablePeriods: 20,
   growthRate: 0.18,
   yieldRate: 0.02,
   bowFactor: 2.1,
   callSchedule: {
     basis: 'unfunded',
-    rates: [0.25, 0.3, 0.4, 0.2, 0.15, 0.1, 0.1, 0.1],
+    rates: [0.25, 0.3, 0.4, 0.2, 0.15, 0.1, 0.1, 0.1, ...Array(32).fill(0)],
   },
   terminalLiquidation: true,
   termExtensionYears: 3,

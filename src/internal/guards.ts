@@ -34,11 +34,6 @@ export function validateConfig(config: ModelConfig): ValidationResult {
   if (!isInt(config.termPeriods) || config.termPeriods < 1) {
     add('termPeriods', 'INVALID_TERM', 'must be an integer >= 1')
   }
-  if (!isInt(config.callablePeriods) || config.callablePeriods < 0) {
-    add('callablePeriods', 'INVALID_CALLABLE_PERIOD', 'must be an integer >= 0')
-  } else if (isInt(config.termPeriods) && config.callablePeriods > config.termPeriods) {
-    add('callablePeriods', 'INVALID_CALLABLE_PERIOD', 'cannot exceed termPeriods')
-  }
   if (typeof config.growthRate !== 'number' || !Number.isFinite(config.growthRate)) {
     add('growthRate', 'INVALID_RATE', 'must be a finite number')
   } else if (config.growthRate <= -1) {
@@ -63,7 +58,13 @@ export function validateConfig(config: ModelConfig): ValidationResult {
     add('termExtensionYears', 'INVALID_TERM_EXTENSION', 'must be a finite number >= 0')
   }
 
-  validateSchedule(config.callSchedule, 'callSchedule', ['commitment', 'unfunded'], add)
+  validateSchedule(
+    config.callSchedule,
+    'callSchedule',
+    ['commitment', 'unfunded'],
+    add,
+    isInt(config.termPeriods) && config.termPeriods >= 1 ? config.termPeriods : undefined,
+  )
   if (config.distributionSchedule) {
     validateSchedule(
       config.distributionSchedule,
@@ -81,6 +82,7 @@ function validateSchedule(
   path: string,
   allowed: readonly string[],
   add: (path: string, code: string, message: string) => void,
+  expectedLength?: number,
 ): void {
   if (!allowed.includes(schedule.basis)) {
     add(`${path}.basis`, 'INVALID_BASIS', `must be one of ${allowed.join(' | ')}`)
@@ -105,6 +107,15 @@ function validateSchedule(
     }
     sum += rate
   })
+
+  if (expectedLength !== undefined && schedule.rates.length !== expectedLength) {
+    const code = schedule.rates.length > expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
+    add(
+      `${path}.rates`,
+      code,
+      `must contain exactly ${expectedLength} rates, one for each term period`,
+    )
+  }
 
   if (schedule.basis === 'commitment' && sum > 1 + RATE_SUM_EPSILON) {
     add(

@@ -21,15 +21,14 @@ export function perPeriodRate(annual: number, periodsPerYear: Frequency): number
 }
 
 /**
- * Call rate for a 1-based period index.
+ * Call rate for a zero-based period index.
  *
- * Period 1 consumes `rates[0]`. The original Python shifted the array on build
- * and then read it shifted again, dropping `rates[0]` entirely; the indexing
- * here is deliberate and covered by a golden fixture.
+ * Period 0 consumes `rates[0]`. Periods with no calls must be represented by
+ * explicit zero rates in the schedule.
  */
 export function callRateAt(config: ModelConfig, index: number): number {
-  if (index < 1 || index > config.callablePeriods) return 0
-  return config.callSchedule.rates[index - 1] ?? 0
+  if (index < 0 || index >= config.termPeriods) return 0
+  return config.callSchedule.rates[index] ?? 0
 }
 
 /**
@@ -45,13 +44,13 @@ export function precomputeCommitmentCalls(
   round: RoundFn,
 ): number[] | undefined {
   if (config.callSchedule.basis !== 'commitment') return undefined
-  const rates = config.callSchedule.rates.slice(0, config.callablePeriods)
+  const rates = config.callSchedule.rates
   const sum = rates.reduce((a, b) => a + b, 0)
   return allocate(round(commitment * sum), rates, round)
 }
 
 /**
- * Capital called in a 1-based period.
+ * Capital called in a zero-based period.
  *
  * For unfunded basis the remaining commitment is floored at zero: once a fund
  * is overcalled (spec D8) there is nothing left to draw, and an unclamped
@@ -65,10 +64,10 @@ export function callAmountAt(
   precomputed: readonly number[] | undefined,
   round: RoundFn,
 ): number {
-  if (index < 1 || index > config.callablePeriods) return 0
-  if (precomputed) return precomputed[index - 1] ?? 0
+  if (index < 0 || index >= config.termPeriods) return 0
+  if (precomputed) return precomputed[index] ?? 0
 
-  const rate = config.callSchedule.rates[index - 1] ?? 0
+  const rate = config.callSchedule.rates[index] ?? 0
   return round(rate * Math.max(0, commitment - calledCumulative))
 }
 
@@ -78,7 +77,7 @@ export interface ResolvedDistribution {
 }
 
 /**
- * Distribution rate for a 1-based period index.
+ * Distribution rate for a zero-based period index.
  *
  * With no explicit schedule this is the TA bow curve — `max(yield, (t/T)^B)`,
  * a NAV-basis rate that ramps toward the end of the term.
@@ -90,11 +89,12 @@ export function distributionAt(
 ): ResolvedDistribution {
   const schedule: DistributionSchedule | undefined = config.distributionSchedule
   if (schedule) {
-    return { rate: schedule.rates[index - 1] ?? 0, basis: schedule.basis }
+    return { rate: schedule.rates[index] ?? 0, basis: schedule.basis }
   }
-  if (index < 1 || effectiveTermPeriods <= 0) return { rate: 0, basis: 'nav' }
+  if (index < 0 || effectiveTermPeriods <= 0) return { rate: 0, basis: 'nav' }
 
   const yieldPerPeriod = perPeriodRate(config.yieldRate, config.periodsPerYear)
-  const bow = (Math.min(index, effectiveTermPeriods) / effectiveTermPeriods) ** config.bowFactor
+  const elapsedPeriods = Math.min(index + 1, effectiveTermPeriods)
+  const bow = (elapsedPeriods / effectiveTermPeriods) ** config.bowFactor
   return { rate: Math.max(yieldPerPeriod, bow), basis: 'nav' }
 }

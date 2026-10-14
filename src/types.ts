@@ -28,10 +28,8 @@ export type DistributionSchedule = CommitmentBasisSchedule | NavBasisSchedule
  */
 export interface ModelConfig {
   readonly periodsPerYear: Frequency
-  /** Total periods modelled, excluding the inception period (index 0). */
+  /** Total modeled cash-flow periods. Output indices run from 0 to termPeriods - 1. */
   readonly termPeriods: number
-  /** Investment period. Calls are zero after this index. */
-  readonly callablePeriods: number
   /** Per annum, decimal. Converted to per-period geometrically. */
   readonly growthRate: number
   /** Per annum, decimal. Converted to per-period geometrically. */
