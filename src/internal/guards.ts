@@ -65,7 +65,12 @@ export function validateConfig(config: ModelConfig): ValidationResult {
 
   validateSchedule(config.callSchedule, 'callSchedule', ['commitment', 'unfunded'], add)
   if (config.distributionSchedule) {
-    validateSchedule(config.distributionSchedule, 'distributionSchedule', ['commitment', 'nav'], add)
+    validateSchedule(
+      config.distributionSchedule,
+      'distributionSchedule',
+      ['commitment', 'nav'],
+      add,
+    )
   }
 
   return issues.length === 0 ? { ok: true } : { ok: false, issues }
