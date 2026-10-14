@@ -160,6 +160,17 @@ describe('validation', () => {
     }
   })
 
+  it('rejects commitment-basis call schedules summing below 1', () => {
+    const result = validateConfig({
+      ...CONFIG,
+      callSchedule: { basis: 'commitment', rates: [0.5, ...Array(19).fill(0)] },
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.issues.some((i) => i.code === 'RATE_SUM_BELOW_COMMITMENT')).toBe(true)
+    }
+  })
+
   it('rejects call schedules that do not cover exactly the modeled term', () => {
     const tooLong = validateConfig({
       ...CONFIG,

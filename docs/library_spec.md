@@ -75,14 +75,14 @@ type DistributionSchedule =
   | { basis: 'nav';        rates: number[] }  // fraction of prevailing NAV
 ```
 
-- **Call `commitment`** — `rates` sum to ≤ 1.0. Natural for user-uploaded schedules ("25% per quarter for a year").
+- **Call `commitment`** — `rates` sum to exactly 1.0. Natural for user-uploaded schedules ("25% per quarter for a year").
 - **Call `unfunded`** — each rate applies to what is left uncalled. Note that such a schedule generally does **not** call 100%: a `[0.30, 0.35, 0.40, 0.35, 0.20]` profile leaves 14.2% permanently uncalled. That is defensible — funds rarely call everything — but it is an explicit, tested property, not an accident.
 - **Distribution `commitment`** — share of commitment, independent of fund performance.
 - **Distribution `nav`** — fraction of prevailing NAV. This is the convention the bow curve produces, so an explicit `nav` schedule and the modelled default are directly comparable.
 
 All four are supported. None is inferred. The `basis` field is required.
 
-`callSchedule.rates` must contain exactly one rate per modeled term period. Periods with no forecast calls are represented by explicit `0` rates rather than a separate callable-window field.
+`callSchedule.rates` must contain exactly one rate per modeled term period. Periods with no forecast calls are represented by explicit `0` rates rather than a separate callable-window field. Commitment-basis call schedules must sum to 1.0.
 
 ### Rate conversion
 
@@ -305,7 +305,7 @@ The prior `callablePeriods` field created two sources of truth: a schedule array
 
 For a `commitment`-basis schedule, actual calls can be ahead of or behind the original forecast by the time `reproject` resumes forecasting.
 
-**Decision:** after actuals, scale the remaining original commitment-basis forecast calls by the multiplier implied by remaining commitment divided by remaining forecast calls. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to calculate from actual remaining unfunded commitment.
+**Decision:** commitment-basis call schedules must sum to 1.0. After actuals, scale the remaining original commitment-basis forecast calls by the multiplier implied by remaining commitment divided by remaining forecast calls. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to calculate from actual remaining unfunded commitment.
 
 ---
 

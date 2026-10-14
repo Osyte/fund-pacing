@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Removed `callablePeriods`; `callSchedule.rates` now has one entry per `termPeriods` period, with explicit `0` rates for no-call periods.
 - Forecast calls can begin in period 0, and `termPeriods` now maps directly to output rows `0..termPeriods - 1`.
 - Commitment-basis `reproject` forecasts now rescale remaining calls after actuals so total called capital returns to commitment.
+- Commitment-basis call schedules now must sum to 1.
 - Added validation errors for call schedules whose length does not match `termPeriods`.
 
 ## 0.1.0

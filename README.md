@@ -109,14 +109,14 @@ These are enforced, not assumed. Getting them wrong is the single largest source
 **Schedule basis is explicit and never inferred.** A rate can mean two different things, and conflating them silently under-calls by a third:
 
 ```ts
-callSchedule: { basis: 'commitment', rates: [...] }  // share of total commitment
+callSchedule: { basis: 'commitment', rates: [...] }  // shares of total commitment; must sum to 1
 callSchedule: { basis: 'unfunded',   rates: [...] }  // rate on remaining unfunded
 
 distributionSchedule: { basis: 'commitment', rates: [...] }  // share of commitment
 distributionSchedule: { basis: 'nav',        rates: [...] }  // fraction of prevailing NAV
 ```
 
-`callSchedule.rates` must contain exactly one rate per `termPeriods` period. Use explicit `0` rates for periods with no calls.
+`callSchedule.rates` must contain exactly one rate per `termPeriods` period. Use explicit `0` rates for periods with no calls. Commitment-basis call schedules must sum to `1`.
 
 Note that an `unfunded`-basis schedule generally does *not* call 100% — a `[0.30, 0.35, 0.40, 0.35, 0.20]` profile leaves 14.2% permanently uncalled. That is intended and tested.
 

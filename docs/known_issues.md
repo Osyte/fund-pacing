@@ -21,7 +21,7 @@ Period 0 is the first modeled cash-flow period containing `startDate`. `callSche
 
 ### K3 — Resolved: commitment-basis forecasts rescale after actuals
 
-After actuals, `commitment`-basis forecast calls are rescaled across the remaining original forecast calls so cumulative called capital returns to 100% of commitment. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to use actual remaining unfunded commitment.
+Commitment-basis call schedules must sum to 100% of commitment. After actuals, `commitment`-basis forecast calls are rescaled across the remaining original forecast calls so cumulative called capital returns to 100% of commitment. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to use actual remaining unfunded commitment.
 
 ### K4 — Resolved: call schedules must cover the full term
 
