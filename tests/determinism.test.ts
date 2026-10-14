@@ -33,10 +33,14 @@ const ACTUALS = [
   { date: '2022-06-30', type: 'nav' as const, amount: 6_800_000_00 },
 ]
 
+const FLOAT_TOLERANCE = 1e-8
+const FLOAT_DECIMALS = 8
+
 function canonicalize(value: unknown): unknown {
   if (typeof value === 'number') {
     if (!Number.isFinite(value) || Number.isInteger(value)) return value
-    return Number(value.toPrecision(12))
+    const rounded = Math.round(value / FLOAT_TOLERANCE) * FLOAT_TOLERANCE
+    return Number(rounded.toFixed(FLOAT_DECIMALS))
   }
   if (Array.isArray(value)) return value.map(canonicalize)
   if (value !== null && typeof value === 'object') {
