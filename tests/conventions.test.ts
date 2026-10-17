@@ -20,7 +20,7 @@ const CONFIG: ModelConfig = {
 }
 const FUND = { commitment: 10_000, startDate: '2024-01-15' }
 
-describe('accepted v0.x conventions', () => {
+describe('accepted v1 conventions', () => {
   it('K1: the same bow calibration does not preserve cash flows across frequencies', () => {
     const annual = {
       ...CONFIG,

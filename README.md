@@ -1,7 +1,7 @@
 # @osyte/fund-pacing
 
 [![CI](https://github.com/osyte/fund-pacing/actions/workflows/ci.yml/badge.svg)](https://github.com/osyte/fund-pacing/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@osyte/fund-pacing)](https://www.npmjs.com/package/@osyte/fund-pacing)
+[![version: v1.0.0](https://img.shields.io/badge/version-v1.0.0-blue.svg)](CHANGELOG.md#100)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A JavaScript/TypeScript library for modeling private fund cash flows using the
@@ -79,9 +79,9 @@ and investment multiples for each period. Money is in integer minor units;
 dates are ISO strings. See [understanding results](docs/results.md).
 
 For [validation and errors](docs/validation.md), the
-[accepted v0.x conventions and known limitations](docs/known_issues.md), or
-model rationale, see the [spec](docs/library_spec.md). The library is pre-1.0;
-the public interface may change before a stable release.
+[accepted v1 conventions and known limitations](docs/known_issues.md), or
+model rationale, see the [spec](docs/library_spec.md). This is the v1.0.0 release;
+future releases follow semantic versioning.
 
 ## Contributing and feedback
 

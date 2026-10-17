@@ -12,7 +12,7 @@ what you tried, what happened, and what would make the library more useful.
 
 For usage questions, start with the [user guide](docs/user-guide.md) and
 [configuration guide](docs/configuration.md). For a proposed model change, check
-the [recorded decisions](docs/library_spec.md#6-recorded-decisions-and-v0x-conventions)
+the [recorded decisions](docs/library_spec.md#6-recorded-decisions-and-v1-conventions)
 and explain the convention you would change. This helps us discuss the proposal
 before you invest time in an implementation.
 
@@ -53,8 +53,8 @@ Fixtures are inputs, never expected outputs. Put the input file in `fixtures/`, 
 - The Takahashi–Alexander step lives in `src/engine/recurrence.ts` and nowhere else.
 - No runtime dependencies. `zod` stays behind the optional `./schema` entry point.
 
-For conventions K1, K5, K7, K8, and K9, use the accepted v0.x decisions in
-[`docs/library_spec.md` §6](docs/library_spec.md#6-recorded-decisions-and-v0x-conventions).
+For conventions K1, K5, K7, K8, and K9, use the accepted v1 decisions in
+[`docs/library_spec.md` §6](docs/library_spec.md#6-recorded-decisions-and-v1-conventions).
 Keep the README, spec, and known-issues disposition consistent. A documentation
 change must describe current behavior; future APIs belong under explicitly
 identified design questions. Do not update snapshots for wording-only changes.

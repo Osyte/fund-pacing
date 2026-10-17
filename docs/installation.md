@@ -97,7 +97,7 @@ see [validation and errors](validation.md#optional-zod-schemas).
 | `require is not defined` | Use `import` in an ESM file, or move the CommonJS example to a `.cjs` file. |
 | Missing `zod` after importing `/schema` | Install Zod 4 in the consuming application. |
 | TypeScript cannot resolve declarations | Check your module-resolution mode and that the installed package contains its built `dist` files. |
-| A copied config is rejected | Check the installed package version and [configuration migration](configuration.md#migrating-from-termperiods); pre-1.0 interfaces may change. |
+| A copied config is rejected | Confirm the installed version matches these docs and follow the [configuration migration](configuration.md#migrating-from-termperiods) when upgrading. |
 
 For development from a checkout, follow [Contributing](../CONTRIBUTING.md#setup).
 Those build and test steps are separate from installing the published library.

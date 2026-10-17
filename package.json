@@ -1,6 +1,6 @@
 {
   "name": "@osyte/fund-pacing",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Takahashi-Alexander pacing model for private fund cash flows. Stateless, isomorphic, zero runtime dependencies.",
   "keywords": [
     "private-equity",

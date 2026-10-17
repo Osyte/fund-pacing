@@ -1,6 +1,6 @@
 # Pacing Model Library — Product Spec
 
-**Status:** Draft for review
+**Status:** v1.0.0 release reference
 **Date:** 2026-08-04
 **Last updated:** 2026-10-17
 **Replaces:** an earlier internal Python implementation and its documentation, referenced below by file name. Neither is included in this repository; the citations record where each carried-forward or dropped behaviour came from.
@@ -285,10 +285,10 @@ Because the prior documentation and the prior code disagree on units, defaults, 
 
 ---
 
-## 6. Recorded decisions and v0.x conventions
+## 6. Recorded decisions and v1 conventions
 
-These decisions define the deterministic v0.x contract. Historical questions are
-retained with their decisions and rationale. Post-v0.1 questions are tracked in
+These decisions define the deterministic v1 contract. Historical questions are
+retained with their decisions and rationale. Post-v1.0 questions are tracked in
 `docs/known_issues.md`; they are not blockers for the initial release.
 
 ### D1 — Bow factor convention
@@ -418,7 +418,7 @@ in actuals and can make period 0 actual. Do not discard them or change their dat
 
 The engine currently has no warning result or logging side effect. Consuming
 applications should flag dates before the fund start for review, comparing
-validated ISO strings. A structured library diagnostics API is a post-v0.1 design
+validated ISO strings. A structured library diagnostics API is a post-v1.0 design
 question, not an existing feature.
 
 **Rationale:** retain supplied activity deterministically while keeping the core
@@ -432,7 +432,7 @@ check calendar validity and reject impossible fund or transaction dates with
 `validateConfig` only validates model configuration, not dates. Consumers must
 handle engine validation errors after schema parsing.
 
-**Rationale:** date shape checks are sufficient for the optional schemas in v0.x;
+**Rationale:** date shape checks are sufficient for the optional schemas in v1;
 every calculation still validates its inputs. Schema success is not a guarantee
 that all engine constraints have passed. Expanding schema parity is future work.
 
@@ -457,7 +457,7 @@ undefined rather than zero.
 
 **Rationale:** the original forecast supplies no reference values after its term.
 Inventing a zero or extrapolated baseline would imply a modeling decision that
-v0.x does not make. Extended comparisons require a future reference convention.
+v1 does not make. Extended comparisons require a future reference convention.
 
 ---
 

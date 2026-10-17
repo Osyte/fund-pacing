@@ -1,6 +1,6 @@
 # Pacing Model Library — Technical Design
 
-**Status:** Draft for review
+**Status:** v1.0.0 release reference
 **Date:** 2026-08-09
 **Last updated:** 2026-10-17
 **Companion to:** `library_spec.md` (product spec — read that first)
@@ -124,7 +124,7 @@ import { ModelConfigSchema } from '@osyte/fund-pacing/schema'; // opt-in, needs 
 
 Schema validation is an optional first stage, not a substitute for engine guards.
 Dates are checked for ISO shape in Zod and calendar validity in the engine.
-`validateConfig` handles model fields only. See spec D15 for the v0.x boundary.
+`validateConfig` handles model fields only. See spec D15 for the v1 boundary.
 
 ---
 
