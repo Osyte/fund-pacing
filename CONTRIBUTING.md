@@ -23,7 +23,7 @@ npm ci
 npm run verify   # lint, typecheck, test, build, package checks
 ```
 
-Node 20 or later. The test suite runs under both Node and jsdom; both must pass.
+Node 22 or later. The test suite runs under both Node and jsdom; both must pass.
 
 Individual checks are `npm run lint`, `npm run typecheck`, `npm test`,
 `npm run test:coverage`, `npm run build`, `npm run check:docs`, and

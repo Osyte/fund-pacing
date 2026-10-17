@@ -174,7 +174,7 @@ and `.github/workflows/ci.yml` for the current checks and release process.
   "name": "@osyte/fund-pacing",
   "type": "module",
   "sideEffects": false,
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "files": ["dist", "docs", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
   "exports": {
     ".": {
@@ -194,7 +194,7 @@ and `.github/workflows/ci.yml` for the current checks and release process.
 
 This excerpt omits package metadata and development dependencies.
 `sideEffects: false` lets bundlers drop unused exports. The package supports
-Node 20+ and modern browser bundlers.
+Node 22+ and modern browser bundlers.
 
 ---
 
@@ -229,7 +229,7 @@ durations, schema agreement, schedule length, and extension boundaries.
 without changing the recurrence. Config generators include fractional years
 aligned to the chosen frequency.
 
-CI runs full verification on Node 20/22/24 and uploads coverage reports. The
+CI runs full verification on Node 22/24 and uploads coverage reports. The
 coverage gate is 95% statements, 95% lines, 90% branches, and 100% functions.
 `tests/recurrence.test.ts` and `tests/rates.test.ts` directly exercise model units;
 `tests/release-regressions.test.ts` includes generated allocation and exact-total
@@ -288,7 +288,7 @@ G3 is the reason `unfunded` must be derived rather than accumulated. A clamped r
 - `VariancePeriod`, `ValidationResult`, and `ValidationIssue` are now defined in spec §3.
 - `termExtensionYears` added to `ModelConfig`; it takes effect only in `reproject`, since only actuals can outlive the term.
 - Field name is `terminalLiquidation` (D3 had a typo).
-- Node 20+ throughout (18 is EOL).
+- Node 22+ throughout.
 - **Multiple NAV observations in one period:** the last by date wins, ties broken by input order. Deterministic and matches the Python's `.iloc[-1]`.
 
 ---

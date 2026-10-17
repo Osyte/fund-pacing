@@ -13,7 +13,7 @@ Takahashi–Alexander model. Stateless, deterministic, and dependency-free at it
 npm install @osyte/fund-pacing
 ```
 
-Supports Node 20+ and modern browser bundlers, with ESM, CommonJS, and TypeScript
+Supports Node 22+ and modern browser bundlers, with ESM, CommonJS, and TypeScript
 declarations. See the [installation guide](docs/installation.md) for package
 managers, imports, optional schemas, and troubleshooting.
 

@@ -32,11 +32,14 @@ executable documentation checks, and packed-package consumer checks.
 
 The browser bundle check and jsdom cover bundling and browser-like globals.
 They are not a test matrix of real browser engines. CI runs the full verification
-command on Node 20, 22, and 24 and uploads coverage reports.
+command on Node 22 and 24 and uploads coverage reports.
 
 `npm run test:coverage` writes `coverage/index.html` and `coverage/coverage-summary.json`.
 Type-only declarations are excluded from the percentage. Snapshot output should
 not be regenerated unless calculation changes are intentional and reviewed.
+
+See the [arithmetic and invariant review](release-verification.md) for how coverage
+is measured, hand-calculated outputs, and an independent exact-fraction check.
 
 ## Inspect package contents
 

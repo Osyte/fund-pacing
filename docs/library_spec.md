@@ -55,7 +55,7 @@ internally. Zod is an optional peer dependency of the separate `/schema` entry.
 There is no random simulation in the public surface. Cross-environment tests
 require exact monetary values and canonicalized floating-point outputs (§5.7).
 
-**Dual build.** ESM + CJS, with type declarations. Node 20+ and modern browsers.
+**Dual build.** ESM + CJS, with type declarations. Node 22+ and modern browsers.
 
 ---
 

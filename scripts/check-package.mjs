@@ -57,6 +57,8 @@ try {
     'docs/known_issues.md',
     'docs/library_spec.md',
     'docs/library_design.md',
+    'docs/releasing.md',
+    'docs/release-verification.md',
     'dist/index.js',
     'dist/index.cjs',
     'dist/index.d.ts',
@@ -105,6 +107,7 @@ try {
     JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')).version,
   )
   assert.equal(Object.keys(manifest.dependencies ?? {}).length, 0)
+  assert.equal(manifest.engines.node, '>=22')
   assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './package.json', './schema'])
   assert.equal(manifest.peerDependenciesMeta.zod.optional, true)
   for (const hook of ['preinstall', 'install', 'postinstall', 'prepare']) {

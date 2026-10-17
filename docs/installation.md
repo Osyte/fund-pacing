@@ -4,7 +4,7 @@
 
 ## Requirements
 
-Use Node.js 20 or later, or a modern browser application with a module bundler.
+Use Node.js 22 or later, or a modern browser application with a module bundler.
 The package includes ESM, CommonJS, and TypeScript declarations. The core has no
 runtime dependencies and does not require a server or a database.
 
