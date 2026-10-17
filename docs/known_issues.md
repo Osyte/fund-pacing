@@ -97,10 +97,9 @@ points reject it with `PacingInputError`, code `INVALID_DATE`. `validateConfig`
 only checks model configuration; it does not receive or validate dates. Schema
 success does not replace engine validation. See spec D15.
 
-There is also a TypeScript boundary: inferred schema output permits an explicit
-`undefined` for `distributionSchedule`. With `exactOptionalPropertyTypes` enabled,
-omit that property when absent before treating parsed data as `ModelConfig`.
-The core's optional property expects a schedule whenever the property is present.
+`ModelConfigSchema` omits an absent or explicitly undefined `distributionSchedule`
+from its parsed output. That output is directly assignable to `ModelConfig`,
+including with `exactOptionalPropertyTypes` enabled.
 
 **Post-v1.0 question:** whether to add semantic date checks and broader validation
 parity to the optional schema entry point.

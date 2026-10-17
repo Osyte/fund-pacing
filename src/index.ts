@@ -1,11 +1,12 @@
 /**
  * @osyte/fund-pacing — Takahashi-Alexander pacing for private fund cash flows.
  *
- * Three layers, each a pure function, each building on the previous:
+ * Four pure functions for curve exploration, investment forecasts, and validation:
  *
  *   buildSchedule(config)                 periods and percentages
  *   project(config, fund)                 + dates and amounts
  *   reproject(config, fund, actuals)      + observed transactions
+ *   validateConfig(config)               structured validation issues
  *
  * Stateless and I/O-free. Every input and output is plain JSON.
  */

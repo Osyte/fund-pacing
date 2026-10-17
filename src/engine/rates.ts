@@ -46,8 +46,7 @@ export function precomputeCommitmentCalls(
 ): number[] | undefined {
   if (config.callSchedule.basis !== 'commitment') return undefined
   const rates = config.callSchedule.rates
-  const sum = rates.reduce((a, b) => a + b, 0)
-  return allocate(round(commitment * sum), rates, round)
+  return allocate(commitment, rates, round)
 }
 
 /**

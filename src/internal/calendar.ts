@@ -28,9 +28,13 @@ export function daysInMonth(y: number, m: number): number {
 }
 
 export function parseISO(value: string, path = 'date'): CivilDate {
-  const match = ISO.exec(value)
+  const match = typeof value === 'string' ? ISO.exec(value) : null
   if (!match) {
-    throw new PacingInputError('INVALID_DATE', path, `expected YYYY-MM-DD, received "${value}"`)
+    throw new PacingInputError(
+      'INVALID_DATE',
+      path,
+      `expected YYYY-MM-DD, received "${String(value)}"`,
+    )
   }
   const y = Number(match[1])
   const m = Number(match[2])
@@ -71,6 +75,14 @@ export function periodEndDates(
   // Final calendar month of the period containing startDate.
   const anchorMonth = Math.ceil(m / step) * step
   const anchor = y * 12 + (anchorMonth - 1)
+
+  if (Math.floor((anchor + (count - 1) * step) / 12) > 9999) {
+    throw new PacingInputError(
+      'DATE_RANGE_EXCEEDED',
+      'fund_life',
+      'projection extends beyond the YYYY-MM-DD calendar range',
+    )
+  }
 
   const out: string[] = []
   for (let i = 0; i < count; i++) {

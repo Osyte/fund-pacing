@@ -16,10 +16,6 @@ interface ScheduleValidationOptions {
   readonly requireCommitmentSumOne?: boolean
 }
 
-function isInt(n: unknown): n is number {
-  return typeof n === 'number' && Number.isInteger(n)
-}
-
 function isFinitePositive(n: unknown): n is number {
   return typeof n === 'number' && Number.isFinite(n) && n > 0
 }
@@ -130,10 +126,11 @@ function validateSchedule(
   }
 
   let sum = 0
-  rates.forEach((rate, i) => {
+  for (let i = 0; i < rates.length; i++) {
+    const rate: unknown = rates[i]
     if (typeof rate !== 'number' || !Number.isFinite(rate)) {
       add(`${path}.rates[${i}]`, 'INVALID_RATE', 'must be a finite number')
-      return
+      continue
     }
     if (rate < 0 || rate > 1) {
       add(
@@ -143,7 +140,7 @@ function validateSchedule(
       )
     }
     sum += rate
-  })
+  }
 
   if (options.expectedLength !== undefined && rates.length !== options.expectedLength) {
     const code = rates.length > options.expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
@@ -178,29 +175,43 @@ export function assertValidConfig(config: ModelConfig): void {
 }
 
 export function assertValidFundTerms(fund: FundTerms): void {
-  if (!isInt(fund.commitment) || fund.commitment <= 0) {
+  if (!isRecord(fund)) {
+    throw new PacingInputError('INVALID_FUND_TERMS', 'fund', 'must be an object')
+  }
+  if (!Number.isSafeInteger(fund.commitment) || fund.commitment <= 0) {
     throw new PacingInputError(
       'INVALID_COMMITMENT',
       'commitment',
-      'must be a positive integer in minor units',
+      'must be a positive safe integer in minor units',
     )
   }
   parseISO(fund.startDate, 'startDate')
 }
 
 export function assertValidTransactions(transactions: readonly Transaction[]): void {
-  transactions.forEach((tx, i) => {
+  if (!Array.isArray(transactions)) {
+    throw new PacingInputError('INVALID_TRANSACTIONS', 'actuals', 'must be an array')
+  }
+  for (let i = 0; i < transactions.length; i++) {
+    const tx: unknown = transactions[i]
     const path = `actuals[${i}]`
-    if (tx.type !== 'call' && tx.type !== 'distribution' && tx.type !== 'nav') {
-      throw new PacingInputError('INVALID_TRANSACTION_TYPE', `${path}.type`, `unknown "${tx.type}"`)
+    if (!isRecord(tx)) {
+      throw new PacingInputError('INVALID_TRANSACTION', path, 'must be a transaction object')
     }
-    if (!isInt(tx.amount) || tx.amount < 0) {
+    if (tx.type !== 'call' && tx.type !== 'distribution' && tx.type !== 'nav') {
+      throw new PacingInputError(
+        'INVALID_TRANSACTION_TYPE',
+        `${path}.type`,
+        `unknown "${String(tx.type)}"`,
+      )
+    }
+    if (typeof tx.amount !== 'number' || !Number.isSafeInteger(tx.amount) || tx.amount < 0) {
       throw new PacingInputError(
         'INVALID_AMOUNT',
         `${path}.amount`,
-        'must be a non-negative integer in minor units',
+        'must be a non-negative safe integer in minor units',
       )
     }
-    parseISO(tx.date, `${path}.date`)
-  })
+    parseISO(typeof tx.date === 'string' ? tx.date : '', `${path}.date`)
+  }
 }

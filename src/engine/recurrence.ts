@@ -15,8 +15,8 @@
  * has not yet had time to be realised. (The Python had it both ways in
  * different files.)
  *
- * The function is unit-agnostic. Layer 1 drives it with `commitment = 1` and
- * identity rounding; layers 2 and 3 drive it with minor units and integer
+ * The function is unit-agnostic. Curves use `commitment = 1` and identity
+ * rounding; investment projections use minor units and integer
  * rounding. There is no second copy to drift.
  */
 
@@ -58,7 +58,7 @@ export function stepPeriod(prev: PeriodState, input: StepInput): StepResult {
   const navGrown = round(prev.nav * (1 + input.growthPerPeriod))
 
   // Total assets available to distribute this period.
-  const available = navGrown + called
+  const available = round(navGrown + called)
 
   let distributed: number
   if (input.isTerminal && input.terminalLiquidation) {
@@ -76,9 +76,9 @@ export function stepPeriod(prev: PeriodState, input: StepInput): StepResult {
     called,
     distributed,
     state: {
-      calledCumulative: prev.calledCumulative + called,
-      distributedCumulative: prev.distributedCumulative + distributed,
-      nav: available - distributed,
+      calledCumulative: round(prev.calledCumulative + called),
+      distributedCumulative: round(prev.distributedCumulative + distributed),
+      nav: round(available - distributed),
     },
   }
 }

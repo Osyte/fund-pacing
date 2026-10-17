@@ -2,9 +2,14 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    // Spec invariant #7: identical inputs must produce byte-identical output
-    // under Node and in a browser-like environment. The determinism suite runs
-    // in both; everything else runs once, under Node.
+    // Shared canonical snapshots cover Node and browser-like globals.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/types.ts'],
+      reporter: ['text', 'json-summary', 'html'],
+      thresholds: { statements: 95, branches: 90, functions: 100, lines: 95 },
+    },
     projects: [
       {
         test: {

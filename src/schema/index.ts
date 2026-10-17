@@ -8,6 +8,7 @@
 
 import { z } from 'zod'
 import { termPeriodsFor } from '../internal/term.js'
+import type { ModelConfig } from '../types.js'
 
 const rate = z.number().finite().min(0).max(1)
 const rates = z.array(rate)
@@ -67,6 +68,10 @@ export const ModelConfigSchema = z
       path: ['callSchedule', 'rates'],
     },
   )
+  .transform((config): ModelConfig => {
+    const { distributionSchedule, ...required } = config
+    return distributionSchedule === undefined ? required : { ...required, distributionSchedule }
+  })
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
 

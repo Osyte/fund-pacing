@@ -12,7 +12,7 @@ import {
 import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 /**
- * Layer 1 — periods and percentages.
+ * Create curves and explore assumptions using periods and percentages.
  *
  * Dimensionless: driven with `commitment = 1` and identity rounding, so the
  * output is independent of both commitment size and calendar. Cheap enough to

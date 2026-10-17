@@ -74,9 +74,15 @@ Examples of config issue codes are `INVALID_FUND_LIFE`, `INVALID_FREQUENCY`,
 Use codes and paths for application logic; avoid matching error-message text.
 
 `validateConfig` does not receive fund terms or transactions, so it cannot check
-their dates or flag pre-start activity. Fund commitment must be a positive integer
-in minor units. Transaction amounts must be non-negative integers. Dates must be
+their dates or flag pre-start activity. Fund commitment must be a positive safe
+integer in minor units. Transaction amounts must be non-negative safe integers. Dates must be
 real ISO calendar dates, such as `2024-02-29` rather than `2023-02-29`.
+
+Malformed fund or transaction containers produce `PacingInputError`, including
+`INVALID_FUND_TERMS`, `INVALID_TRANSACTIONS`, and `INVALID_TRANSACTION`. Sparse
+schedule and transaction arrays are rejected. The engine throws `NUMERIC_OVERFLOW`
+instead of returning non-finite or unsafe monetary results, and
+`DATE_RANGE_EXCEEDED` if a projection would produce dates after year 9999.
 
 ## Optional Zod schemas
 
@@ -104,11 +110,11 @@ success/failure result. These are separate from the library's engine errors.
 but engine entry points reject it with `PacingInputError` (`INVALID_DATE`). Some
 cross-field checks also remain engine-authoritative; see [K7](known_issues.md#k7--accepted-date-schemas-check-shape-engine-checks-calendar-validity).
 
-With TypeScript's `exactOptionalPropertyTypes`, schema-inferred output may allow
-an explicit `undefined` for `distributionSchedule`, while `ModelConfig` expects
-that property to be omitted when absent. Omit it when constructing a core config
-from parsed data. A successful schema parse is not a replacement for the engine
-validation contract.
+`ModelConfigSchema` normalizes an absent or explicitly undefined
+`distributionSchedule` by omitting that property from the output. Parsed configs
+are directly assignable to `ModelConfig`, including under TypeScript's
+`exactOptionalPropertyTypes`. A successful parse still does not replace the
+engine's semantic validation contract.
 
 ## Warnings in consuming applications
 

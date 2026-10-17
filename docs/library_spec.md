@@ -79,8 +79,10 @@ enforce numeric constraints and real calendar dates at runtime.
 
 **Rounding.** Resolved monetary amounts and grown NAV are rounded to minor units,
 half-away-from-zero. Closing NAV is grown NAV plus calls minus distributions.
-When commitment calls are allocated across periods, the rounding residual goes
-to the final nonzero weight so components sum to the allocated total exactly.
+When commitment calls are allocated across periods, each rounded share is capped
+at the remaining budget, then any residual goes to the final nonzero weight.
+This preserves the total without negative allocations even for tiny commitments
+(D18).
 `buildSchedule` uses fractional arithmetic without monetary rounding.
 
 ### Schedule basis — the critical distinction
@@ -273,7 +275,7 @@ transactions as applicable. The optional schemas do not replace this validation
 
 Because the prior documentation and the prior code disagree on units, defaults, and curve shape, **the test suite is the specification**. These are asserted properties, not aspirations.
 
-1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0, final `calledCumulative` equals `commitment` to the cent. The four-year fixture verifies the correction to the earlier implementation's 68.4% result.
+1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0 within validation tolerance, final `calledCumulative` equals `commitment` to the cent. Accepted rate weights are normalized to the commitment, not used to change its total. The four-year fixture verifies the correction to the earlier implementation's 68.4% result.
 2. **Curves are scale- and calendar-invariant.** `buildSchedule` output does not change with commitment or start date. Proves the fractional/denominated split is clean.
 3. **Empty actuals is a no-op.** `reproject(c, f, [])` returns `revised` deeply equal to `project(c, f)`, and `baseline` equal to `revised`.
 4. **Conservation.** For every period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributed - called`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
@@ -458,6 +460,37 @@ undefined rather than zero.
 **Rationale:** the original forecast supplies no reference values after its term.
 Inventing a zero or extrapolated baseline would imply a modeling decision that
 v1 does not make. Extended comparisons require a future reference convention.
+
+---
+
+### D18 — Nonnegative allocation and exact commitment totals
+
+**Decision:** allocate the full commitment across accepted commitment schedule
+weights, including weights whose sum differs from 1 within validation tolerance.
+Do not scale the target amount by that small difference. Round each share, cap
+it at the remaining unallocated amount, and put any positive residual into the
+last nonzero-weight period. Apply the same allocator to rescaled future calls.
+
+**Rationale:** rounding three cents across five equal periods must not create a
+negative call. Accepted tolerance must not add or remove cents from commitment.
+Normal forecasts retain their existing values; no determinism snapshot changes
+are required for these edge-case corrections.
+
+### D19 — Reject unrepresentable results and malformed runtime inputs
+
+**Decision:** monetary inputs must be safe integers; every produced monetary
+amount and cumulative must remain a safe integer. Reject unsafe or non-finite
+calculations with `PacingInputError` (`NUMERIC_OVERFLOW`) before returning a
+result. Fractional curves must remain finite. Projection dates must stay within
+the four-digit ISO calendar range; exceeding year 9999 raises
+`DATE_RANGE_EXCEEDED`. Reject malformed fund/transaction containers and sparse
+arrays with structured validation or input errors.
+
+**Rationale:** valid shapes and finite rate inputs alone do not guarantee that a
+long or rapidly growing projection can represent every cent. Successful
+projections obey the invariants; precision overflows are explicit errors rather
+than silent corruption. Property tests for conservation and NAV use representable
+histories, with separate overflow regression tests.
 
 ---
 

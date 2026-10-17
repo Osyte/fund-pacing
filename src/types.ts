@@ -45,7 +45,7 @@ export interface ModelConfig {
   readonly termExtensionYears: number
 }
 
-/** Layer 1 output. Dimensionless: independent of commitment and calendar. */
+/** Curve output. Dimensionless: independent of commitment and calendar. */
 export interface SchedulePeriod {
   readonly index: number
   readonly callRate: number
@@ -57,7 +57,7 @@ export interface SchedulePeriod {
 }
 
 export interface FundTerms {
-  /** Minor units (e.g. cents). Must be a positive integer. */
+  /** Minor units (e.g. cents). Must be a positive safe integer. */
   readonly commitment: number
   /** ISO `YYYY-MM-DD`. */
   readonly startDate: string
@@ -65,7 +65,7 @@ export interface FundTerms {
 
 export type FlowSource = 'actual' | 'forecast'
 
-/** Layer 2/3 output. Dated and denominated in minor units. */
+/** Investment cash-flow output. Dated and denominated in minor units. */
 export interface CashFlowPeriod {
   readonly index: number
   readonly periodEnd: string
@@ -90,7 +90,7 @@ export interface Transaction {
   /** ISO `YYYY-MM-DD`. */
   readonly date: string
   readonly type: TransactionType
-  /** Non-negative integer minor units; zero is valid. */
+  /** Non-negative safe integer minor units; zero is valid. */
   readonly amount: number
 }
 

@@ -21,3 +21,8 @@ Initial stable release.
 - Accepted v1 conventions for frequency-specific bow calibration (K1), pre-start transaction bucketing and application warnings (K5), schema/engine validation boundaries (K7), readonly result sharing (K8), and baseline-horizon variance (K9).
 - Installation, configuration, user, results, and validation guides, with a concise README and contribution guidance.
 - Aligned Biome tooling and release verification across the configured Node CI versions.
+- Fixed rounding for tiny commitments and normalized accepted near-100% schedules to exact commitment totals.
+- Rejected sparse arrays, malformed runtime fund/transaction containers, unsafe monetary values, numeric overflow, and projection dates beyond year 9999 with structured errors.
+- Made parsed config schemas directly assignable to the core TypeScript config, including strict optional-property checking.
+- Added enforced coverage thresholds, recurrence/rate/allocation regression tests, executable documentation checks, and isolated tarball consumer tests for ESM/CJS, optional schemas, strict types, and browser bundling.
+- Included linked documentation in the npm package, rebuilt output before packing, and required full verification before publishing. Updated vulnerable development tooling.

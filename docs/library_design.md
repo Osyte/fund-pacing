@@ -90,8 +90,11 @@ period count becoming a second source of truth.
 
 **Money rounding is centralized.** `money.ts` rounds half-away-from-zero to whole
 minor units. Resolved calls, grown NAV, and distributions use this rounding;
-closing NAV is then derived from those values. Commitment allocation assigns
-the residual to the final nonzero weight so parts sum to the allocated total.
+closing NAV is then derived from those values. Rounded call shares are capped at
+the remaining budget before any residual goes to the final nonzero weight.
+Accepted commitment schedule weights normalize to the full commitment, including
+when their sum differs from 1 within validation tolerance. Monetary amounts and
+cumulatives are checked for safe integer precision.
 
 ---
 
@@ -141,10 +144,10 @@ All of these are dev-time only and contribute nothing to consumer bundles.
 | Lint + format | **Biome** | One tool, one config, replaces ESLint + Prettier |
 | Package correctness | **publint** + **@arethetypeswrong/cli** | Dual ESM/CJS `exports` maps are easy to get subtly wrong; these catch it in CI before publish |
 
-No bundle-size guard, changesets release workflow, or Git hooks are currently
-configured. Release verification is `npm run verify`; publishing is a separate
-maintainer action. See `package.json` and `.github/workflows/ci.yml` for the
-configured commands and CI steps.
+There is no changesets workflow or automatic publishing job. `prepack` rebuilds
+the package and `prepublishOnly` runs full verification. Publishing remains an
+explicit maintainer action. See [Releasing v1.0.0](releasing.md), `package.json`,
+and `.github/workflows/ci.yml` for the current checks and release process.
 
 ### Relevant configured TypeScript flags
 
@@ -172,7 +175,7 @@ configured commands and CI steps.
   "type": "module",
   "sideEffects": false,
   "engines": { "node": ">=20" },
-  "files": ["dist", "LICENSE", "CHANGELOG.md"],
+  "files": ["dist", "docs", "LICENSE", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md"],
   "exports": {
     ".": {
       "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
@@ -226,7 +229,17 @@ durations, schema agreement, schedule length, and extension boundaries.
 without changing the recurrence. Config generators include fractional years
 aligned to the chosen frequency.
 
-CI runs the matrix on Node 20/22/24, then `publint` and `attw` against the built artifact.
+CI runs full verification on Node 20/22/24 and uploads coverage reports. The
+coverage gate is 95% statements, 95% lines, 90% branches, and 100% functions.
+`tests/recurrence.test.ts` and `tests/rates.test.ts` directly exercise model units;
+`tests/release-regressions.test.ts` includes generated allocation and exact-total
+checks, runtime validation, precision overflow, and input immutability.
+
+`scripts/check-docs.mjs` type-checks and runs the consumer examples and checks local
+links. `scripts/check-package.mjs` builds and packs the actual artifact, checks its
+contents, installs the tarball offline, runs isolated ESM/CJS consumers with and without Zod, compiles strict
+TypeScript consumers, and bundles the packed core for a browser target. The same
+tarball is checked by publint and attw. It does not run a separate browser engine.
 
 ---
 
@@ -245,6 +258,8 @@ buildSchedule(config)                                                           
 individual codes such as `INVALID_FUND_LIFE`, `RATE_OUT_OF_RANGE`, and
 `SCHEDULE_TOO_LONG`. `PacingInputError` carries its own code and path, such as
 `INVALID_DATE` at `actuals[0].date` or `INVALID_COMMITMENT` at `commitment`.
+Unrepresentable monetary results fail with `NUMERIC_OVERFLOW`; a projection
+beyond the four-digit calendar range fails with `DATE_RANGE_EXCEEDED`.
 Consumers can map these to messages without matching error text.
 
 Public model fields and input transaction arrays are readonly. The library never

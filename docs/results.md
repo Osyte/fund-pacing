@@ -49,6 +49,11 @@ For example, `called: 8000` and `distributed: 2000` mean an $80 outflow, a $20
 inflow, and a net cash flow of -$60 when the minor unit is cents. Keep these values
 as integers for storage and calculation; convert for display in your application.
 
+Money must stay within JavaScript's safe integer range (`Number.MAX_SAFE_INTEGER`
+minor units). Calculations or cumulative amounts beyond that precision are
+rejected with `PacingInputError` (`NUMERIC_OVERFLOW`), rather than returning
+rounded-away cents, `Infinity`, or `NaN`.
+
 Forecast distributions cannot exceed grown NAV plus this period's calls. Reported
 actuals are preserved using the [aggregation rules](user-guide.md#how-transactions-become-historical-periods).
 An actual-period NAV can be modeled if no NAV observation was provided.

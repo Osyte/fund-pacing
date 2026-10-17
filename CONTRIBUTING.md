@@ -26,8 +26,13 @@ npm run verify   # lint, typecheck, test, build, package checks
 Node 20 or later. The test suite runs under both Node and jsdom; both must pass.
 
 Individual checks are `npm run lint`, `npm run typecheck`, `npm test`,
-`npm run build`, and `npm run check:package`. See the
+`npm run test:coverage`, `npm run build`, `npm run check:docs`, and
+`npm run check:package`. See the
 [technical design](docs/library_design.md) for the module and test structure.
+
+`npm run verify` enforces coverage thresholds and checks the actual packed
+package in isolated consumers. For publication steps and what each check covers,
+see [Releasing v1.0.0](docs/releasing.md).
 
 ## What the tests mean
 
