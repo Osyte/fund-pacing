@@ -77,7 +77,8 @@ are the only actuals, `asOf` is the end of period 0, which is marked actual.
 
 The current engine returns no warnings and performs no logging. The consuming
 application should flag `transaction.date < fund.startDate` for review, using
-validated ISO date strings. See the README example and spec D14.
+validated ISO date strings. See the [user-guide example](user-guide.md#pre-start-transactions)
+and spec D14.
 
 **Post-v0.1 question:** whether the library needs a structured diagnostics API
 for warnings, while preserving pure calculation entry points.

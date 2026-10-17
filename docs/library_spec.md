@@ -11,18 +11,23 @@
 
 A **stateless, isomorphic TypeScript library** that implements the Takahashi–Alexander (TA) pacing model for private fund cash flows.
 
-It answers three questions, in increasing order of specificity:
+It exposes four functions for these purposes:
 
-| # | Question | Needs |
+| Function | Purpose | Needs |
 |---|---|---|
-| 1 | *What does the cash-flow curve look like?* | Model parameters only |
-| 2 | *What are the actual dates and dollar amounts?* | \+ commitment amount and date |
-| 3 | *Given what has actually happened, what now?* | \+ observed calls / distributions / NAVs |
+| `buildSchedule` | Create curves and explore assumptions | Config |
+| `project` | Forecast a prospective or new investment | Config, commitment, start date |
+| `reproject` | Update a forecast using investment history | Config, fund terms, observed calls / distributions / NAVs |
+| `validateConfig` | Reuse model validation rules in an application | Config |
 
-Each is a pure function exposed through imports, not an HTTP endpoint. The layers
-describe increasing input detail; callers do not need to run them in sequence.
-Layer 1 is usable on its own — a UI can render a pacing curve before a commitment
-is entered — and `project` can be called directly.
+Each is a pure function exposed through imports. Callers do not need to run them
+in sequence. `buildSchedule` lets a UI explore curves before a commitment is
+entered, while `project` can forecast a new investment directly. `validateConfig`
+returns structured issues for applications without duplicating validation rules.
+
+For practical examples, start with the [user guide](user-guide.md). Understanding
+the [configuration](configuration.md), particularly periodicity and schedule
+bases, is essential to interpreting the model's results.
 
 ### What this library is not
 
@@ -76,7 +81,7 @@ enforce numeric constraints and real calendar dates at runtime.
 half-away-from-zero. Closing NAV is grown NAV plus calls minus distributions.
 When commitment calls are allocated across periods, the rounding residual goes
 to the final nonzero weight so components sum to the allocated total exactly.
-Layer 1 uses fractional arithmetic without monetary rounding.
+`buildSchedule` uses fractional arithmetic without monetary rounding.
 
 ### Schedule basis — the critical distinction
 
@@ -130,7 +135,7 @@ interface ModelConfig {
   readonly termExtensionYears: number;      // term extension when actuals outlive the term (D5)
 }
 
-/** Layer 1 output — dimensionless. Independent of commitment and calendar. */
+/** Curve output — dimensionless. Independent of commitment and calendar. */
 interface SchedulePeriod {
   readonly index: number;
   readonly callRate: number;
@@ -141,7 +146,7 @@ interface SchedulePeriod {
   readonly navFraction: number;
 }
 
-/** Layer 2 & 3 output — dated, denominated, in minor units. */
+/** Investment cash-flow output — dated, denominated, in minor units. */
 interface CashFlowPeriod {
   readonly index: number;
   readonly periodEnd: string;               // ISO date
@@ -159,14 +164,14 @@ interface CashFlowPeriod {
   readonly tvpi: number;
 }
 
-/** Layer 3 input. */
+/** Observed investment history for reproject. */
 interface Transaction {
   readonly date: string;                    // ISO
   readonly type: 'call' | 'distribution' | 'nav';
   readonly amount: number;                  // non-negative integer minor units; zero is valid
 }
 
-/** Layer 3 output — baseline vs revised, per period. */
+/** Reprojection variance — baseline vs revised, per period. */
 interface VariancePeriod {
   readonly index: number;
   readonly periodEnd: string;
@@ -198,7 +203,7 @@ zero when cumulative calls are zero.
 
 ## 4. API
 
-### Layer 1 — periods and percentages
+### Create curves and explore assumptions — buildSchedule
 
 ```ts
 buildSchedule(config: ModelConfig): SchedulePeriod[]
@@ -206,7 +211,7 @@ buildSchedule(config: ModelConfig): SchedulePeriod[]
 
 Pure model math. No commitment, no dates, no money. Deterministic and fast enough to run on every keystroke in a parameter-tuning UI.
 
-### Layer 2 — dates and amounts
+### Forecast a prospective or new investment — project
 
 ```ts
 project(
@@ -220,7 +225,7 @@ ends at the quarter/half/year end containing `startDate`; output has exactly
 `fund_life * periodsPerYear` rows. A partial starting calendar period is treated
 as a full model step without prorating growth or yield.
 
-### Layer 3 — revised forecast from actuals
+### Update an investment with history — reproject
 
 ```ts
 reproject(
@@ -252,7 +257,7 @@ A zero NAV observation is authoritative; it is not treated as missing. A NAV-onl
 history does not imply paid-in capital. Historical periods can have modeled NAV
 even though their `source` is `'actual'`.
 
-### Supporting exports
+### Reuse configuration validation — validateConfig
 
 ```ts
 validateConfig(config: ModelConfig): ValidationResult     // non-throwing model-config checks
@@ -269,7 +274,7 @@ transactions as applicable. The optional schemas do not replace this validation
 Because the prior documentation and the prior code disagree on units, defaults, and curve shape, **the test suite is the specification**. These are asserted properties, not aspirations.
 
 1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0, final `calledCumulative` equals `commitment` to the cent. The four-year fixture verifies the correction to the earlier implementation's 68.4% result.
-2. **Layer 1 is scale- and calendar-invariant.** `buildSchedule` output does not change with commitment or start date. Proves the fractional/denominated split is clean.
+2. **Curves are scale- and calendar-invariant.** `buildSchedule` output does not change with commitment or start date. Proves the fractional/denominated split is clean.
 3. **Empty actuals is a no-op.** `reproject(c, f, [])` returns `revised` deeply equal to `project(c, f)`, and `baseline` equal to `revised`.
 4. **Conservation.** For every period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributed - called`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
 5. **NAV is non-negative** in every period, under every valid config.

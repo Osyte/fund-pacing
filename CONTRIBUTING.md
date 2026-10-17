@@ -1,6 +1,20 @@
 # Contributing
 
-Thanks for taking an interest. This is a small library with a narrow job, so contributions are easiest to land when they keep it that way.
+Found a bug or something you'd like to change? Excellent!
+
+Worked out a fix? Even better!
+
+Want to tell us about it? We'd love to hear from you.
+
+Questions, suggestions, documentation improvements, and reports from real usage
+are welcome. You do not need to have a fix before opening an issue. Describe
+what you tried, what happened, and what would make the library more useful.
+
+For usage questions, start with the [user guide](docs/user-guide.md) and
+[configuration guide](docs/configuration.md). For a proposed model change, check
+the [recorded decisions](docs/library_spec.md#6-recorded-decisions-and-v0x-conventions)
+and explain the convention you would change. This helps us discuss the proposal
+before you invest time in an implementation.
 
 ## Setup
 
@@ -10,6 +24,10 @@ npm run verify   # lint, typecheck, test, build, package checks
 ```
 
 Node 20 or later. The test suite runs under both Node and jsdom; both must pass.
+
+Individual checks are `npm run lint`, `npm run typecheck`, `npm test`,
+`npm run build`, and `npm run check:package`. See the
+[technical design](docs/library_design.md) for the module and test structure.
 
 ## What the tests mean
 

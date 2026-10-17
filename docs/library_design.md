@@ -17,22 +17,24 @@ Nearly every defect listed in spec §7 traces to one of two root causes. Two des
 
 The Python has the TA step written out in four places (`run_ta_model_new_investment` deterministic loop, its Monte Carlo loop, `run_ta_model_existing_investment` forecast loop, plus the archive). They drifted — which is how the deterministic and simulated paths ended up using different call schedules, and how the off-by-one entered one copy but not the others.
 
-Here, `engine/recurrence.ts` exports a single step function, and all layers drive it:
+Here, `engine/recurrence.ts` exports a single step function, shared by curve and
+investment calculations:
 
 ```ts
 stepPeriod(prev: PeriodState, input: StepInput): StepResult
 ```
 
-It is unit-agnostic — it does not know whether it is working in fractions or in cents. That is what lets Layer 1 and Layers 2/3 share it:
+It is unit-agnostic — it does not know whether it is working in fractions or in
+cents. Curve and investment calculations use it with different units:
 
-| Layer | Instantiated with | Arithmetic |
+| Purpose | Instantiated with | Arithmetic |
 |---|---|---|
-| 1 — `buildSchedule` | `commitment = 1.0` | float |
-| 2/3 — `project` / `reproject` | `commitment` in minor units | integer, rounded per period |
+| Curves — `buildSchedule` | `commitment = 1.0` | float |
+| Investment forecasts — `project` / `reproject` | `commitment` in minor units | integer, rounded per period |
 
 One implementation, two instantiations. There is no second copy to drift.
 
-### Layer 2 is a special case of Layer 3
+### A new-investment forecast is a reprojection without actuals
 
 Spec invariant #3 asserts `reproject(c, f, [])` equals `project(c, f)`. Rather than test that two implementations agree, implement one:
 
@@ -56,8 +58,8 @@ src/
 
   engine/
     recurrence.ts          ← the single TA step function
-    schedule.ts            Layer 1: buildSchedule
-    reproject.ts           Layer 3: reproject (and project, as a wrapper)
+    schedule.ts            curves and assumption exploration: buildSchedule
+    reproject.ts           investment forecasts: reproject and project
     rates.ts               resolves callSchedule/distributionSchedule → per-period rates
 
   internal/
