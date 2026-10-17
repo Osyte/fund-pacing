@@ -24,6 +24,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - name: Package checks with inherited publish dry-run config
+        run: npm run check:package
+        env:
+          npm_config_dry_run: 'true'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

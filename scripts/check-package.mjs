@@ -25,6 +25,9 @@ function run(command, args, cwd = root) {
       ...process.env,
       NODE_PATH: '',
       npm_config_cache: process.env.npm_config_cache ?? path.join(temp, 'npm-cache'),
+      // A publish dry run still needs a real local tarball and offline install.
+      // Override inherited dry-run only for these verification subprocesses.
+      npm_config_dry_run: 'false',
     },
   })
 }
@@ -41,6 +44,7 @@ try {
   const [packed] = JSON.parse(
     run(npm, ['pack', '--json', '--ignore-scripts', '--pack-destination', temp]),
   )
+  assert.ok(existsSync(path.join(temp, packed.filename)), 'npm pack did not create the tarball')
   const files = new Set(packed.files.map((file) => file.path))
   const expected = [
     'README.md',
