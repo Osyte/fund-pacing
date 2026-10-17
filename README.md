@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/osyte/fund-pacing/actions/workflows/ci.yml/badge.svg)](https://github.com/osyte/fund-pacing/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@osyte/fund-pacing)](https://www.npmjs.com/package/@osyte/fund-pacing)
-[![license: MIT](https://img.shields.io/npm/l/@osyte/fund-pacing)](LICENSE)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A JavaScript/TypeScript library for modeling private fund cash flows using the
 Takahashi–Alexander model. Stateless, deterministic, and dependency-free at its core.
@@ -17,21 +17,20 @@ Supports Node 20+ and modern browser bundlers, with ESM, CommonJS, and TypeScrip
 declarations. See the [installation guide](docs/installation.md) for package
 managers, imports, optional schemas, and troubleshooting.
 
-## Understand your configuration
+## Configuration
 
 Configuration defines the assumptions behind the model: fund life, periodicity,
 growth, and how capital is called and distributed. Investment size, start date,
 and transaction history are separate inputs.
 
-**Understanding the configuration is essential to interpreting the results.**
-Periodicity affects the number of periods, schedule entries, dates, and how the
-curve behaves. The engine requires explicit assumptions; it does not choose
-investment defaults for you.
+The library makes different assumptions about how different inputs are adjusted
+for periodicity. Understanding these assumptions is important when configuring
+the model and comparing results across frequencies.
 
 Read the [configuration guide](docs/configuration.md) for how to enter each
 parameter, its units, constraints, and interactions.
 
-## What can you do with it?
+## Public Functions
 
 The library exposes four functions:
 
