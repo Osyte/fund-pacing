@@ -1,5 +1,6 @@
 import { assertValidConfig } from '../internal/guards.js'
 import { noRound } from '../internal/money.js'
+import { termPeriodsFor } from '../internal/term.js'
 import type { ModelConfig, SchedulePeriod } from '../types.js'
 import {
   callAmountAt,
@@ -21,7 +22,7 @@ export function buildSchedule(config: ModelConfig): SchedulePeriod[] {
   assertValidConfig(config)
 
   const growth = perPeriodRate(config.growthRate, config.periodsPerYear)
-  const term = config.termPeriods
+  const term = termPeriodsFor(config)
 
   const out: SchedulePeriod[] = []
   let state: PeriodState = ZERO_STATE

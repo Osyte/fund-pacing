@@ -13,7 +13,7 @@ import { buildSchedule, type ModelConfig, project } from '../src/index.js'
 
 const FOUR_YEAR: ModelConfig = {
   periodsPerYear: 4,
-  termPeriods: 16,
+  fund_life: 4,
   growthRate: 0.15,
   yieldRate: 0,
   bowFactor: 2.5,
@@ -67,7 +67,7 @@ describe('unfunded basis leaves a residual, by design', () => {
     const config: ModelConfig = {
       ...FOUR_YEAR,
       periodsPerYear: 1,
-      termPeriods: 12,
+      fund_life: 12,
       callSchedule: {
         basis: 'unfunded',
         rates: [0.3, 0.35, 0.4, 0.35, 0.2, ...Array(7).fill(0)],
@@ -83,7 +83,7 @@ describe('unfunded basis leaves a residual, by design', () => {
 describe('geometric compounding (spec D7)', () => {
   const config: ModelConfig = {
     periodsPerYear: 4,
-    termPeriods: 4,
+    fund_life: 1,
     growthRate: 0.2,
     yieldRate: 0,
     bowFactor: 2.5,

@@ -6,6 +6,7 @@ import {
 } from '../internal/guards.js'
 import { multiples } from '../internal/metrics.js'
 import { roundMinor } from '../internal/money.js'
+import { termPeriodsFor } from '../internal/term.js'
 import type {
   CashFlowPeriod,
   FundTerms,
@@ -203,11 +204,12 @@ export function reproject(
   const { buckets, lastActualIndex } = bucketTransactions(actuals, fund, config)
 
   // Term extension: only actuals can outlive the term (spec D5).
+  const termPeriods = termPeriodsFor(config)
   const extension = Math.round(config.termExtensionYears * config.periodsPerYear)
   const effectiveTermPeriods =
-    lastActualIndex >= config.termPeriods ? lastActualIndex + 1 + extension : config.termPeriods
+    lastActualIndex >= termPeriods ? lastActualIndex + 1 + extension : termPeriods
 
-  const baseline = runProjection(config, fund, new Map(), -1, config.termPeriods)
+  const baseline = runProjection(config, fund, new Map(), -1, termPeriods)
   const revised =
     lastActualIndex < 0
       ? baseline

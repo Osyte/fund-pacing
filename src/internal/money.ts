@@ -19,8 +19,8 @@ export type RoundFn = (x: number) => number
  * Split `total` across `weights` so the parts sum to `total` exactly.
  * Any rounding residual is assigned to the final non-zero weight.
  *
- * Rounding each period independently is what makes a `[0.25, 0.25, 0.25, 0.25]`
- * schedule against 10000 cents come to 10001; allocating once does not.
+ * Rounding four equal calls against 10001 cents independently totals 10000;
+ * residual allocation preserves the intended 10001-cent total.
  */
 export function allocate(
   total: number,

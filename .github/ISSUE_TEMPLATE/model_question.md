@@ -10,4 +10,6 @@ labels: model
 
 **What you expected, and why**
 
-Cite the spec decision (D1–D8) or the entry in `docs/known_issues.md` if one applies.
+Cite the relevant decision in `docs/library_spec.md` §6 or the entry in
+`docs/known_issues.md` if one applies. Explain whether the proposal changes an
+accepted v0.x convention or adds a future option.

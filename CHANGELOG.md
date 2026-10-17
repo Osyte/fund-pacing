@@ -4,12 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
-- Removed `callablePeriods`; `callSchedule.rates` now has one entry per `termPeriods` period, with explicit `0` rates for no-call periods.
-- Forecast calls can begin in period 0, and `termPeriods` now maps directly to output rows `0..termPeriods - 1`.
+- Replaced `termPeriods` with `fund_life` in years; the library derives the period count as `fund_life * periodsPerYear`. Fractional years must align with whole periods; invalid durations are rejected without rounding. Migrate with `fund_life = termPeriods / periodsPerYear`.
+- Removed `callablePeriods`; `callSchedule.rates` now has one entry per derived model period, with explicit `0` rates for no-call periods.
+- Forecast calls can begin in period 0, and output has exactly `fund_life * periodsPerYear` rows.
 - Commitment-basis `reproject` forecasts now rescale remaining calls after actuals so total called capital returns to commitment.
 - Commitment-basis call schedules now must sum to 1.
-- Added validation errors for call schedules whose length does not match `termPeriods`.
+- Added validation errors for call schedules whose length does not match the derived period count.
 - Hardened `validateConfig` so malformed runtime config shapes return validation issues instead of throwing `TypeError`.
+- Recorded accepted v0.x conventions for bow calibration (K1), pre-start transaction bucketing and application warnings (K5), schema/engine validation boundaries (K7), readonly result sharing (K8), and baseline-horizon variance (K9).
 
 ## 0.1.0
 

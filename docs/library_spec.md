@@ -2,6 +2,7 @@
 
 **Status:** Draft for review
 **Date:** 2026-08-04
+**Last updated:** 2026-10-17
 **Replaces:** an earlier internal Python implementation and its documentation, referenced below by file name. Neither is included in this repository; the citations record where each carried-forward or dropped behaviour came from.
 
 ---
@@ -18,7 +19,10 @@ It answers three questions, in increasing order of specificity:
 | 2 | *What are the actual dates and dollar amounts?* | \+ commitment amount and date |
 | 3 | *Given what has actually happened, what now?* | \+ observed calls / distributions / NAVs |
 
-Each is a pure function. Each builds on the previous one. Layer 1 is usable on its own — a UI can render a pacing curve from a strategy picker with no commitment entered yet.
+Each is a pure function exposed through imports, not an HTTP endpoint. The layers
+describe increasing input detail; callers do not need to run them in sequence.
+Layer 1 is usable on its own — a UI can render a pacing curve before a commitment
+is entered — and `project` can be called directly.
 
 ### What this library is not
 
@@ -32,13 +36,19 @@ Charting is also out of scope. The library returns plain data structures; the co
 
 **Stateless and pure.** Same inputs → same outputs, always. No hidden state between calls, no singletons, no mutation of arguments. This is what makes the library safe to run in a React render, a Node request handler, a Lambda, and a test — identically.
 
-**Explicit over default.** *This is a hard requirement.* The calculation engine accepts a fully-resolved config in which every parameter is present and explicit. It has no fallbacks and no knowledge that "defaults" exist. 
+**Explicit over default.** The calculation engine requires every `ModelConfig`
+field except the optional `distributionSchedule`. Omit that schedule to use the
+TA bow/yield curve. No duration, rate, liquidation, or extension defaults are
+supplied by the library.
 
 **JSON-serializable in and out.** Every input and output is plain JSON — so the persistence layer above can store a config or a result verbatim, and a server can compute a forecast and ship it to a browser with `JSON.stringify`. Concretely: dates are ISO `YYYY-MM-DD` strings, never `Date` objects; money is integer minor units as `number`, never `bigint` or a class instance.
 
-**Zero runtime dependencies.** Required for clean bundling and tree-shaking in a React app. Date arithmetic (quarter-end, year-end) is ~20 lines and does not justify a dependency.
+**Zero runtime dependencies in the core.** Civil-date arithmetic is implemented
+internally. Zod is an optional peer dependency of the separate `/schema` entry.
 
-**Deterministic.** Including simulation — any stochastic feature takes an explicit seed, so a frontend preview and a backend recompute of the same scenario agree exactly.
+**Deterministic.** Identical inputs produce the same calculation within a runtime.
+There is no random simulation in the public surface. Cross-environment tests
+require exact monetary values and canonicalized floating-point outputs (§5.7).
 
 **Dual build.** ESM + CJS, with type declarations. Node 20+ and modern browsers.
 
@@ -48,41 +58,57 @@ Charting is also out of scope. The library returns plain data structures; the co
 
 ### Units and conventions
 
-These are non-negotiable and enforced at the type level.
+These are part of the public contract. Types describe the shapes; engine guards
+enforce numeric constraints and real calendar dates at runtime.
 
 | Concept | Representation | Rationale |
 |---|---|---|
 | Dates | ISO `YYYY-MM-DD` string | JSON-safe; no timezone drift |
 | Money | Integer **minor units** (cents) as `number` | Exact to ~$90 trillion; JSON-safe; avoids float drift over 40+ compounding periods |
-| Rates & fractions | `number`, decimal (`0.25` = 25%) | Never percent-valued. Values > 1 are rejected, not coerced |
+| Schedule rates | Decimal `number` in `[0, 1]` (`0.25` = 25%) | Never percent-valued or coerced |
+| Annual growth / yield | Finite decimals; growth > -1, yield >= 0 | Converted geometrically; values above 1 are permitted |
+| Fund life | Finite years > 0; `fund_life * periodsPerYear` is a positive safe integer | Duration is supplied in years; partial periods are rejected |
 | Periods | Zero-indexed integer; period 0 is the first modeled cash-flow period containing `startDate` | — |
 
 **Rate inputs are decimals, full stop.** The current Python coerces with `r/100 if r > 1 else r`, which is ambiguous at exactly `1.0` (100%? or 1%?). The library rejects out-of-range values with a clear error instead of guessing.
 
-**Rounding.** Money is rounded once, at the period boundary, half-away-from-zero. Where a total is allocated across periods, the residual is assigned to the final period so components always sum to the total exactly.
+**Rounding.** Resolved monetary amounts and grown NAV are rounded to minor units,
+half-away-from-zero. Closing NAV is grown NAV plus calls minus distributions.
+When commitment calls are allocated across periods, the rounding residual goes
+to the final nonzero weight so components sum to the allocated total exactly.
+Layer 1 uses fractional arithmetic without monetary rounding.
 
 ### Schedule basis — the critical distinction
 
-A rate can mean one of two things, and conflating them is the single largest defect in the current implementation (a `[25%, 25%, 25%, 25%]` call schedule intended to call 100% actually calls 68.4%). Calls and distributions each carry an explicit basis, and the two are symmetric (D6).
+A rate can mean one of two things. The earlier Python implementation applied
+commitment percentages to unfunded capital, so a `[25%, 25%, 25%, 25%]` schedule
+intended to call 100% called about 68.4%. Calls and distributions now carry an
+explicit basis (D6).
 
 ```ts
 type CallSchedule =
-  | { basis: 'commitment'; rates: number[] }  // share of total commitment
-  | { basis: 'unfunded';   rates: number[] }  // rate applied to remaining unfunded
+  | { readonly basis: 'commitment'; readonly rates: readonly number[] }
+  | { readonly basis: 'unfunded'; readonly rates: readonly number[] }
 
 type DistributionSchedule =
-  | { basis: 'commitment'; rates: number[] }  // share of total commitment
-  | { basis: 'nav';        rates: number[] }  // fraction of prevailing NAV
+  | { readonly basis: 'commitment'; readonly rates: readonly number[] }
+  | { readonly basis: 'nav'; readonly rates: readonly number[] }
 ```
 
-- **Call `commitment`** — `rates` sum to exactly 1.0. Natural for user-uploaded schedules ("25% per quarter for a year").
+- **Call `commitment`** — `rates` sum to 1.0 within an absolute validation tolerance of `1e-9`. Natural for user-uploaded schedules ("25% per quarter for a year").
 - **Call `unfunded`** — each rate applies to what is left uncalled. Note that such a schedule generally does **not** call 100%: a `[0.30, 0.35, 0.40, 0.35, 0.20]` profile leaves 14.2% permanently uncalled. That is defensible — funds rarely call everything — but it is an explicit, tested property, not an accident.
 - **Distribution `commitment`** — share of commitment, independent of fund performance.
-- **Distribution `nav`** — fraction of prevailing NAV. This is the convention the bow curve produces, so an explicit `nav` schedule and the modelled default are directly comparable.
+- **Distribution `nav`** — fraction of grown prior NAV, excluding the current period's call. This is the basis the bow curve uses.
 
 All four are supported. None is inferred. The `basis` field is required.
 
 `callSchedule.rates` must contain exactly one rate per modeled term period. Periods with no forecast calls are represented by explicit `0` rates rather than a separate callable-window field. Commitment-basis call schedules must sum to 1.0.
+
+Distribution schedule length is not constrained to the fund term: missing entries
+resolve to zero and entries after the horizon are unused. Commitment-basis
+distribution rates must sum to at most 1 (with the same `1e-9` tolerance).
+Forecast distributions are capped at available assets. Terminal liquidation
+overrides the scheduled distribution in the final forecast period.
 
 ### Rate conversion
 
@@ -91,76 +117,82 @@ Annual rates convert to per-period **geometrically** (D7): `perPeriod = (1 + ann
 ### Core types
 
 ```ts
-/** Fully resolved. Every field required. The engine sees only this. */
+/** All fields required except the explicit distribution override. */
 interface ModelConfig {
-  periodsPerYear: 1 | 2 | 4;
-  termPeriods: number;             // total periods modelled (fund life × periodsPerYear)
-  growthRate: number;              // per annum, decimal — converted geometrically (D7)
-  yieldRate: number;               // per annum, decimal — converted geometrically (D7)
-  bowFactor: number;               // distribution curve shape; any value > 0 (D1)
-  callSchedule: CallSchedule;
-  distributionSchedule?: DistributionSchedule;  // optional override of the bow curve
-  terminalLiquidation: boolean;    // distribute all residual NAV in the final period
-  termExtensionYears: number;      // term extension when actuals outlive the term (D5)
+  readonly periodsPerYear: 1 | 2 | 4;
+  readonly fund_life: number;               // years; fund_life × periodsPerYear must be a positive safe integer (D12)
+  readonly growthRate: number;              // per annum, decimal — converted geometrically (D7)
+  readonly yieldRate: number;               // per annum, decimal — converted geometrically (D7)
+  readonly bowFactor: number;               // distribution curve shape; any value > 0, calibrated per frequency (D1, D13)
+  readonly callSchedule: CallSchedule;
+  readonly distributionSchedule?: DistributionSchedule;  // optional override of the bow curve
+  readonly terminalLiquidation: boolean;    // distribute all residual NAV in the final period
+  readonly termExtensionYears: number;      // term extension when actuals outlive the term (D5)
 }
 
 /** Layer 1 output — dimensionless. Independent of commitment and calendar. */
 interface SchedulePeriod {
-  index: number;
-  callRate: number;
-  distributionRate: number;
-  calledFraction: number;          // cumulative, of commitment
-  distributedFraction: number;     // cumulative, of commitment
-  unfundedFraction: number;
-  navFraction: number;
+  readonly index: number;
+  readonly callRate: number;
+  readonly distributionRate: number;
+  readonly calledFraction: number;          // cumulative, of commitment
+  readonly distributedFraction: number;     // cumulative, of commitment
+  readonly unfundedFraction: number;
+  readonly navFraction: number;
 }
 
 /** Layer 2 & 3 output — dated, denominated, in minor units. */
 interface CashFlowPeriod {
-  index: number;
-  periodEnd: string;               // ISO date
-  source: 'actual' | 'forecast';
-  called: number;
-  distributed: number;
-  netCashFlow: number;
-  calledCumulative: number;        // PIC
-  distributedCumulative: number;
-  unfunded: number;                // may be negative when overcalled (D8)
-  overcalled: boolean;             // calledCumulative > commitment
-  nav: number;
-  dpi: number;
-  rvpi: number;
-  tvpi: number;
+  readonly index: number;
+  readonly periodEnd: string;               // ISO date
+  readonly source: 'actual' | 'forecast';
+  readonly called: number;
+  readonly distributed: number;
+  readonly netCashFlow: number;
+  readonly calledCumulative: number;        // PIC
+  readonly distributedCumulative: number;
+  readonly unfunded: number;                // may be negative when overcalled (D8)
+  readonly overcalled: boolean;             // calledCumulative > commitment
+  readonly nav: number;
+  readonly dpi: number;
+  readonly rvpi: number;
+  readonly tvpi: number;
 }
 
 /** Layer 3 input. */
 interface Transaction {
-  date: string;                    // ISO
-  type: 'call' | 'distribution' | 'nav';
-  amount: number;                  // minor units, always positive
+  readonly date: string;                    // ISO
+  readonly type: 'call' | 'distribution' | 'nav';
+  readonly amount: number;                  // non-negative integer minor units; zero is valid
 }
 
 /** Layer 3 output — baseline vs revised, per period. */
 interface VariancePeriod {
-  index: number;
-  periodEnd: string;
-  calledDelta: number;             // revised − baseline, minor units
-  distributedDelta: number;
-  navDelta: number;
-  tvpiDelta: number;
+  readonly index: number;
+  readonly periodEnd: string;
+  readonly calledDelta: number;             // revised − baseline, minor units
+  readonly distributedDelta: number;
+  readonly navDelta: number;
+  readonly tvpiDelta: number;
 }
 
 /** Non-throwing validation result. */
 type ValidationResult =
-  | { ok: true }
-  | { ok: false; issues: ValidationIssue[] };
+  | { readonly ok: true }
+  | { readonly ok: false; readonly issues: readonly ValidationIssue[] };
 
 interface ValidationIssue {
-  path: string;                    // e.g. 'callSchedule.rates[3]'
-  code: string;                    // machine-readable, e.g. 'RATE_OUT_OF_RANGE'
-  message: string;
+  readonly path: string;                    // e.g. 'callSchedule.rates[3]'
+  readonly code: string;                    // machine-readable, e.g. 'RATE_OUT_OF_RANGE'
+  readonly message: string;
 }
 ```
+
+`FundTerms` contains a positive integer `commitment` in minor units and a real ISO
+`startDate`. Output money is in minor units; `dpi`, `rvpi`, and `tvpi` are
+dimensionless multiples. DPI is cumulative distributions divided by cumulative
+calls, RVPI is NAV divided by cumulative calls, and TVPI is their sum. All are
+zero when cumulative calls are zero.
 
 ---
 
@@ -180,10 +212,13 @@ Pure model math. No commitment, no dates, no money. Deterministic and fast enoug
 project(
   config: ModelConfig,
   fund: { commitment: number; startDate: string }
-): CashFlowPeriod[]
+): readonly CashFlowPeriod[]
 ```
 
-Applies a calendar and a scale to Layer 1. Period end dates are true quarter/half/year ends derived from `startDate`.
+Runs the model with commitment-sized monetary amounts and a calendar. Period 0
+ends at the quarter/half/year end containing `startDate`; output has exactly
+`fund_life * periodsPerYear` rows. A partial starting calendar period is treated
+as a full model step without prorating growth or yield.
 
 ### Layer 3 — revised forecast from actuals
 
@@ -191,29 +226,41 @@ Applies a calendar and a scale to Layer 1. Period end dates are true quarter/hal
 reproject(
   config: ModelConfig,
   fund: { commitment: number; startDate: string },
-  actuals: Transaction[]
+  actuals?: readonly Transaction[]
 ): {
-  baseline: CashFlowPeriod[];   // the original T=0 forecast, unchanged
-  revised:  CashFlowPeriod[];   // actuals spliced in, remainder re-forecast
-  variance: VariancePeriod[];   // per-period baseline vs revised
-  asOf: string;                 // boundary date between actual and forecast
+  readonly baseline: readonly CashFlowPeriod[]; // original T=0 forecast
+  readonly revised: readonly CashFlowPeriod[];  // actuals spliced in, remainder re-forecast
+  readonly variance: readonly VariancePeriod[]; // revised − baseline over shared periods (D17)
+  readonly asOf: string | null; // end of latest actual period; null with no actuals
 }
 ```
 
 `actuals` is the **complete** transaction set, not a delta. This makes add, edit, and delete a single operation, and keeps the function pure — the persistence layer owns the transaction list and passes the current state of it.
 
 Behaviour:
+
 - Transactions are bucketed into periods by date. Periods up to and including the last transaction are `source: 'actual'`; everything after is `source: 'forecast'`.
+- Pre-start transactions enter period 0 (D14). In actual periods, missing calls and distributions are zero, including gaps in history. Missing NAV is `max(0, grown prior NAV + supplied calls - supplied distributions)`. No forecast flows are substituted for missing actuals.
 - Reported NAV, where supplied, overrides modelled NAV for that period and becomes the base for forward projection.
 - The forecast resumes from the actual state — actual unfunded, actual NAV, actual PIC.
-- For `commitment`-basis call schedules, forecast calls after actuals are rescaled across the remaining original forecast calls so total called capital returns to 100% of commitment, unless actual calls already exceed commitment.
+- For `commitment`-basis call schedules, remaining original forecast calls are rescaled toward commitment (D11). If no positive forecast calls remain, no new call periods are created. If actual calls already exceed commitment, future calls are zero.
 - Returning `baseline` alongside `revised` makes forecast-accuracy tracking a first-class output rather than something the caller reconstructs.
+
+The latest transaction of any type determines the actual boundary. `asOf` is
+that period's end, including when the transaction occurred earlier in the period.
+A zero NAV observation is authoritative; it is not treated as missing. A NAV-only
+history does not imply paid-in capital. Historical periods can have modeled NAV
+even though their `source` is `'actual'`.
 
 ### Supporting exports
 
 ```ts
-validateConfig(config: ModelConfig): ValidationResult     // explicit, never implicit
+validateConfig(config: ModelConfig): ValidationResult     // non-throwing model-config checks
 ```
+
+Engine entry points automatically validate configuration, fund terms, and
+transactions as applicable. The optional schemas do not replace this validation
+(D15). The authoritative public interfaces in `src/types.ts` use readonly fields.
 
 ---
 
@@ -221,55 +268,66 @@ validateConfig(config: ModelConfig): ValidationResult     // explicit, never imp
 
 Because the prior documentation and the prior code disagree on units, defaults, and curve shape, **the test suite is the specification**. These are asserted properties, not aspirations.
 
-1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0, final `calledCumulative` equals `commitment` to the cent. *(The documented 4-year example; currently produces 68.4%.)*
+1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0, final `calledCumulative` equals `commitment` to the cent. The four-year fixture verifies the correction to the earlier implementation's 68.4% result.
 2. **Layer 1 is scale- and calendar-invariant.** `buildSchedule` output does not change with commitment or start date. Proves the fractional/denominated split is clean.
 3. **Empty actuals is a no-op.** `reproject(c, f, [])` returns `revised` deeply equal to `project(c, f)`, and `baseline` equal to `revised`.
 4. **Conservation.** For every period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributed - called`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
 5. **NAV is non-negative** in every period, under every valid config.
-6. **Actuals are reproduced verbatim.** Periods marked `source: 'actual'` report exactly the transaction amounts supplied — the model never overwrites an observed figure.
-7. **Isomorphic determinism.** Identical inputs produce byte-identical `JSON.stringify` output under Node and in a browser.
-8. **Call schedules map one-to-one onto modeled periods.** `callSchedule.rates.length === termPeriods`; period `i` consumes `rates[i]`, including period 0, and no-call periods are explicit zeros.
+6. **Actuals are preserved by aggregation.** Actual-period calls and distributions equal the sums of supplied transactions. The latest reported NAV by date wins, with input order breaking equal-date ties; the model never replaces that selected observation.
+7. **Cross-environment determinism.** Node and jsdom produce matching monetary values and canonical JSON snapshots. Integer values are compared exactly; floating outputs are canonicalized at `1e-8` to tolerate last-digit runtime differences. This is browser-like environment coverage, not a test of every browser engine.
+8. **Fund life determines the modeled periods.** The number of periods is `fund_life * periodsPerYear`, a positive safe integer. `callSchedule.rates.length` equals that derived count; period `i` consumes `rates[i]`, including period 0, and no-call periods are explicit zeros.
 9. **Commitment-basis reprojections preserve commitment.** For `basis: 'commitment'` schedules that call 100% of commitment and have remaining forecast call periods, `reproject` rescales future forecast calls after actuals so final `calledCumulative` equals `commitment`, unless actual calls already exceed commitment.
 
 ---
 
-## 6. Open decisions
+## 6. Recorded decisions and v0.x conventions
 
-Two require a product answer before implementation. The rest are recorded with a recommended default.
+These decisions define the deterministic v0.x contract. Historical questions are
+retained with their decisions and rationale. Post-v0.1 questions are tracked in
+`docs/known_issues.md`; they are not blockers for the initial release.
 
-### D1 — Bow factor convention **(blocking)**
+### D1 — Bow factor convention
 
 Distribution rate is `max(yield, (t/L)^B)`. The prior doc's examples use `B = 0.5–0.6`; `strategy_defaults.py` uses `B = 1.8–2.5`. These are opposite curve shapes — at 25% through fund life, `B=0.5` distributes 50% of NAV and `B=2.5` distributes 3%.
 
 **Decision:** The module will accept any bow value > 0.
 
-### D2 — Resume vs. restart after actuals **(blocking)**
+### D2 — Resume vs. restart after actuals
 
 When actuals end at fund age 5 and forecasting resumes, does the call-rate schedule continue at index 5, or restart at index 0?
 
 The current Python **restarts** — so a 5-year-old fund that has called 80% resumes with year-1 call rates. This looks unintended but is load-bearing for requirement 3.
 
-**Recommendation:** resume by fund age (index 5), with restart available as an explicit option if a real use case exists.
-
 **Decision:** resume by fund age (index 5). No option to restart required. 
 
-### D3 — Terminal liquidation *(default: on)*
+### D3 — Explicit terminal liquidation
 
-The current model forces distribution of all residual NAV in the final period, guaranteeing NAV ends at 0. Exposed as `terminalLiquidation`, defaulting to `true` to match existing behaviour.
+The earlier model forced distribution of residual NAV in the final period.
 
-**Decision:** Expose as `terminalLiquidation`, with default as suggested.  
+**Decision:** require an explicit `terminalLiquidation` boolean. When `true`, the
+final forecast period distributes all available assets, including that period's
+call, leaving zero NAV. When `false`, use the resolved distribution rate instead;
+this does not guarantee positive residual NAV. Observed actual periods are not
+overridden by terminal liquidation. The engine does not supply a default.
 
-### D4 — Monte Carlo scope *(default: not in v1)*
+### D4 — Monte Carlo scope
 
-Percentile NAV bands are valuable but orthogonal to all three stated requirements, and the two existing implementations contradict each other. Ship the deterministic core first; add `simulate(config, fund, { seed, runs })` as a separate entry point in v1.1 so it is tree-shakeable.
+Percentile NAV bands are outside the three stated deterministic requirements.
 
-**Decision:** Remove all monte carlo functionality from the new module. 
+**Decision:** omit Monte Carlo functionality. There is no public `simulate`
+function or committed release version for adding one.
 
-### D5 — Extended fund life *(default: port as-is, parameterised)*
+### D5 — Explicit extension after actuals outlive the term
 
-Current behaviour extends `L` to `actualLife + 3` years when a fund outlives its assumed term. The intent is documented; the constant `3` is not. Expose it as `termExtensionYears` rather than hard-coding it.
+The earlier implementation hard-coded three additional years. The library makes
+that duration an explicit `termExtensionYears` input.
 
-**Decision:** Expose `termExtensionYears` as suggested. It is carried on `ModelConfig` but only takes effect in `reproject`, since only actuals can outlive the term.
+**Decision:** only extend when `lastActualIndex >= fund_life * periodsPerYear`.
+The revised count is `lastActualIndex + 1 + Math.round(termExtensionYears *
+periodsPerYear)`. The baseline retains its original count, and variance covers
+only the shared horizon (D17). Zero extension is valid and still includes the
+late actual period. Extension years retain this rounding convention; unlike
+`fund_life`, they need not align exactly with whole periods.
 
 ### D6 — Distribution schedule basis
 
@@ -291,7 +349,7 @@ Recallable capital and recycling mean a real fund can report cumulative calls ab
 
 ### D9 — Period-zero call alignment
 
-`termPeriods` is the number of modeled cash-flow periods. Output indices run from `0` to `termPeriods - 1`, and period 0 is the first modeled cash-flow period containing `startDate`.
+The number of modeled cash-flow periods is derived from `fund_life * periodsPerYear` (D12). Output indices run from `0` to that count minus one, and period 0 is the first modeled cash-flow period containing `startDate`.
 
 **Decision:** `callSchedule.rates[0]` applies to period 0. There is no extra inception-only output row.
 
@@ -299,13 +357,102 @@ Recallable capital and recycling mean a real fund can report cumulative calls ab
 
 The prior `callablePeriods` field created two sources of truth: a schedule array and a separate window that could silently ignore user-provided rates.
 
-**Decision:** remove `callablePeriods`. `callSchedule.rates` must be exactly `termPeriods` long, with explicit `0` entries for periods in which no capital is forecast to be called. Invalid lengths fail validation and engine entry points reject them.
+**Decision:** remove `callablePeriods`. `callSchedule.rates` must have exactly `fund_life * periodsPerYear` entries, with explicit `0` entries for periods in which no capital is forecast to be called. Invalid lengths fail validation and engine entry points reject them.
 
 ### D11 — Commitment-basis calls after actuals
 
 For a `commitment`-basis schedule, actual calls can be ahead of or behind the original forecast by the time `reproject` resumes forecasting.
 
-**Decision:** commitment-basis call schedules must sum to 1.0. After actuals, scale the remaining original commitment-basis forecast calls by the multiplier implied by remaining commitment divided by remaining forecast calls. If actual calls already exceed commitment, future commitment-basis calls are zero. `unfunded`-basis schedules continue to calculate from actual remaining unfunded commitment.
+**Decision:** commitment-basis call schedules must sum to 1.0. After actuals,
+allocate `max(0, commitment - actualCalledCumulative)` across the remaining
+original forecast call amounts in proportion to their weights. If their total
+is zero, leave future calls at zero: do not invent new call periods or move calls
+into zero-weight periods. Total capital can therefore remain below commitment
+when actuals have exhausted the original call window. If actual calls exceed
+commitment, preserve those calls and forecast no further commitment calls.
+`unfunded`-basis schedules continue to use actual remaining unfunded commitment,
+floored at zero for future calls.
+
+### D12 — Fund life is supplied in years
+
+Fund duration is a domain input in years; callers should not have to convert it
+to periods before configuring the model.
+
+**Decision:** replace the public `termPeriods` field with `fund_life`, in years.
+The library derives `fund_life * periodsPerYear` internally for schedules,
+projections, and the original reprojection horizon. Fund life must be finite and
+positive, and the derived count must be a positive safe integer. Fractional years
+are supported when they align with whole model periods; partial periods are
+rejected rather than rounded so the library never silently changes the requested
+fund duration. `validateConfig` reports `INVALID_FUND_LIFE` at `fund_life` for
+invalid durations, and the optional schema enforces the same duration constraint.
+
+Existing configs migrate with `fund_life = termPeriods / periodsPerYear`; remove
+`termPeriods`. There is no legacy fallback or second source of truth. Outputs for
+an equivalent duration are unchanged. `termExtensionYears` keeps its existing
+meaning: additional forecast years after actuals outlive the original fund term.
+
+### D13 — Bow calibration is specific to model frequency (K1)
+
+**Decision:** apply `((index + 1) / effectiveTermPeriods)^bowFactor` once per
+model period. Growth and yield are annual inputs converted geometrically; bow
+is not frequency-normalized. Calibrate it for annual, semiannual, or quarterly
+modeling. Changing frequency with the same bow factor need not preserve cash
+flows. An explicit distribution schedule overrides bow and yield.
+
+**Rationale:** preserve a deterministic convention and existing calibrations
+without assuming a frequency-independent parameterization. A future alternative
+requires an explicit migration decision.
+
+### D14 — Pre-start transactions enter period 0; applications flag them (K5)
+
+**Decision:** bucket transactions dated before `startDate` into period 0. Use the
+normal aggregation rules: sum calls and distributions, take the latest NAV by
+date, and break equal-date NAV ties by input order. Such transactions participate
+in actuals and can make period 0 actual. Do not discard them or change their dates.
+
+The engine currently has no warning result or logging side effect. Consuming
+applications should flag dates before the fund start for review, comparing
+validated ISO strings. A structured library diagnostics API is a post-v0.1 design
+question, not an existing feature.
+
+**Rationale:** retain supplied activity deterministically while keeping the core
+pure and avoiding a warning API introduced without an agreed contract.
+
+### D15 — Engine validation is authoritative (K7)
+
+**Decision:** optional Zod date schemas check `YYYY-MM-DD` format. Engine guards
+check calendar validity and reject impossible fund or transaction dates with
+`PacingInputError` (`INVALID_DATE`), even if the schema accepted them.
+`validateConfig` only validates model configuration, not dates. Consumers must
+handle engine validation errors after schema parsing.
+
+**Rationale:** date shape checks are sufficient for the optional schemas in v0.x;
+every calculation still validates its inputs. Schema success is not a guarantee
+that all engine constraints have passed. Expanding schema parity is future work.
+
+### D16 — Empty-actuals results may share readonly arrays (K8)
+
+**Decision:** with omitted or empty actuals, `baseline` and `revised` may share one
+readonly array. `asOf` is `null`; variance has one zero-delta row per baseline
+period. Consumers must not mutate results or rely on distinct references.
+Readonly is a TypeScript contract rather than runtime freezing; consumers that
+need editable data must copy arrays and rows. Reference identity itself is not
+a stable public guarantee.
+
+**Rationale:** avoid unnecessary allocation when the projections have identical
+values while retaining the existing readonly API.
+
+### D17 — Variance is limited to the baseline horizon (K9)
+
+**Decision:** compute each variance delta as `revised - baseline` over shared
+periods. Keep the baseline at the original derived fund term when actuals extend
+the revised horizon. Extended periods have no variance rows: the comparison is
+undefined rather than zero.
+
+**Rationale:** the original forecast supplies no reference values after its term.
+Inventing a zero or extrapolated baseline would imply a modeling decision that
+v0.x does not make. Extended comparisons require a future reference convention.
 
 ---
 

@@ -9,7 +9,7 @@ import {
 
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,
-  termPeriods: 20,
+  fund_life: 5,
   growthRate: 0.15,
   yieldRate: 0,
   bowFactor: 2.5,
@@ -25,7 +25,7 @@ const FUND = { commitment: 5_000_000_00, startDate: '2024-01-15' }
 
 const COMMITMENT_CONFIG: ModelConfig = {
   periodsPerYear: 4,
-  termPeriods: 4,
+  fund_life: 1,
   growthRate: 0,
   yieldRate: 0,
   bowFactor: 1,
@@ -89,7 +89,7 @@ describe('reproject', () => {
       { date: '2030-03-31', type: 'call', amount: 100_00 },
     ])
     expect(baseline).toHaveLength(baselineLength)
-    // Actuals reach index 24, beyond termPeriods=20, so the term extends by
+    // Actuals reach index 24, beyond 5 years x 4 = 20 periods, so the term extends by
     // termExtensionYears (3) x periodsPerYear (4) = 12 periods.
     expect(revised.length).toBe(24 + 12 + 1)
   })
@@ -204,7 +204,7 @@ describe('validation', () => {
   it('collects every issue rather than stopping at the first', () => {
     const result = validateConfig({
       ...CONFIG,
-      termPeriods: 0,
+      fund_life: 0,
       bowFactor: 0,
       yieldRate: -1,
     })

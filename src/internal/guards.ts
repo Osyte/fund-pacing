@@ -7,6 +7,7 @@ import type {
   ValidationResult,
 } from '../types.js'
 import { parseISO } from './calendar.js'
+import { termPeriodsFor } from './term.js'
 
 const RATE_SUM_EPSILON = 1e-9
 
@@ -43,13 +44,25 @@ export function validateConfig(config: ModelConfig): ValidationResult {
     return { ok: false, issues }
   }
 
-  const termPeriods = input.termPeriods
+  const frequency = input.periodsPerYear
+  const fundLife = input.fund_life
+  const validFrequency = frequency === 1 || frequency === 2 || frequency === 4
+  const termPeriods =
+    isFinitePositive(fundLife) && validFrequency
+      ? termPeriodsFor({ fund_life: fundLife, periodsPerYear: frequency })
+      : undefined
 
-  if (input.periodsPerYear !== 1 && input.periodsPerYear !== 2 && input.periodsPerYear !== 4) {
+  if (!validFrequency) {
     add('periodsPerYear', 'INVALID_FREQUENCY', 'must be 1, 2, or 4')
   }
-  if (!isInt(termPeriods) || termPeriods < 1) {
-    add('termPeriods', 'INVALID_TERM', 'must be an integer >= 1')
+  if (!isFinitePositive(fundLife)) {
+    add('fund_life', 'INVALID_FUND_LIFE', 'must be a finite number > 0, in years')
+  } else if (termPeriods !== undefined && (!Number.isSafeInteger(termPeriods) || termPeriods < 1)) {
+    add(
+      'fund_life',
+      'INVALID_FUND_LIFE',
+      'fund_life * periodsPerYear must be a positive safe integer; partial periods are not rounded',
+    )
   }
   if (typeof input.growthRate !== 'number' || !Number.isFinite(input.growthRate)) {
     add('growthRate', 'INVALID_RATE', 'must be a finite number')
@@ -76,7 +89,7 @@ export function validateConfig(config: ModelConfig): ValidationResult {
   }
 
   const callScheduleOptions: ScheduleValidationOptions =
-    isInt(termPeriods) && termPeriods >= 1
+    typeof termPeriods === 'number' && Number.isSafeInteger(termPeriods) && termPeriods >= 1
       ? { expectedLength: termPeriods, requireCommitmentSumOne: true }
       : { requireCommitmentSumOne: true }
   validateSchedule(

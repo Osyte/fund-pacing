@@ -11,7 +11,7 @@ import { buildSchedule, type ModelConfig, project, reproject } from '../src/inde
 
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,
-  termPeriods: 40,
+  fund_life: 10,
   growthRate: 0.18,
   yieldRate: 0.02,
   bowFactor: 2.1,

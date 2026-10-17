@@ -17,7 +17,7 @@ function ratesSumOne(length: number): fc.Arbitrary<number[]> {
 export const arbConfig: fc.Arbitrary<ModelConfig> = fc
   .record({
     periodsPerYear: frequency,
-    termYears: fc.integer({ min: 1, max: 12 }),
+    termPeriods: fc.integer({ min: 1, max: 48 }),
     growthRate: fc.double({ min: -0.5, max: 0.5, noNaN: true }),
     yieldRate: fc.double({ min: 0, max: 0.15, noNaN: true }),
     bowFactor: fc.double({ min: 0.2, max: 4, noNaN: true }),
@@ -26,10 +26,10 @@ export const arbConfig: fc.Arbitrary<ModelConfig> = fc
     termExtensionYears: fc.integer({ min: 0, max: 5 }),
   })
   .chain((base) => {
-    const termPeriods = base.termYears * base.periodsPerYear
+    const termPeriods = base.termPeriods
     return ratesSumOne(termPeriods).map((rates) => ({
       periodsPerYear: base.periodsPerYear,
-      termPeriods,
+      fund_life: termPeriods / base.periodsPerYear,
       growthRate: base.growthRate,
       yieldRate: base.yieldRate,
       bowFactor: base.bowFactor,

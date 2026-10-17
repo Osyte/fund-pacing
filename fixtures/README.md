@@ -1,6 +1,8 @@
 # Fixtures
 
-Input data for regression tests. Nothing here is published: `package.json` sets `"files": ["dist"]`.
+Reference input data for regression examples. `fixtures/` is not included in the
+package's published file list. Tests define model inputs directly; the library
+does not read or parse these files.
 
 **These are inputs, not expected outputs.** Expected values are derived from the corrected math described in `docs/library_spec.md` §7, not from the earlier implementation this library replaces. That implementation evaluates `4_year_quarterly_example.csv` to 68.4% called where the documentation says 100%, so matching it would mean failure, not success.
 
@@ -17,6 +19,11 @@ Percentages are **shares of commitment**, so these map to `{ basis: 'commitment'
 
 The 4-year file is the documented headline example ("calls = 100% in year 1, 25% each quarter") and is asserted in `tests/fixtures.test.ts`.
 
+Use `fund_life: 4, periodsPerYear: 4` for the four-year quarterly example (16
+call-schedule entries), or `fund_life: 10, periodsPerYear: 4` for ten years (40
+entries). Divide imported percentage values by 100 in the consuming application;
+the engine expects decimal rates and does not infer their units.
+
 ## Transaction format
 
 `synthetic_transactions.csv`
@@ -30,4 +37,8 @@ A generated, deterministic transaction history for three fictional funds, in the
 | `Reported Market Value` | `nav` |
 | `Other` | commitment amount (fund setup, not a transaction) |
 
-Amounts are signed (calls negative). `Transaction.amount` is always positive; the type carries the direction. Dates are `M/D/YYYY` in the file and must be converted to ISO `YYYY-MM-DD` before use, since the library does no parsing.
+CSV amounts are signed (calls negative). Convert amounts into non-negative
+integer minor units for `Transaction.amount`; zero is valid and the type carries
+the flow direction. Dates are `M/D/YYYY` in the file and must be converted to
+real ISO `YYYY-MM-DD` dates before use. The engine validates ISO dates but does
+not parse CSVs or convert currency units.
