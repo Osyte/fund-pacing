@@ -27,4 +27,4 @@ Initial stable release.
 - Made parsed config schemas directly assignable to the core TypeScript config, including strict optional-property checking.
 - Added enforced coverage thresholds, recurrence/rate/allocation regression tests, executable documentation checks, and isolated tarball consumer tests for ESM/CJS, optional schemas, strict types, and browser bundling.
 - Included linked documentation in the npm package, rebuilt output before packing, and required full verification before publishing. Updated vulnerable development tooling.
-- Added hand-calculated end-to-end regression cases and documented independent arithmetic verification of the release invariants.
+- Added hand-calculated end-to-end regression cases for the release invariants.

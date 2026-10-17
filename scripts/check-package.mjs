@@ -57,8 +57,6 @@ try {
     'docs/known_issues.md',
     'docs/library_spec.md',
     'docs/library_design.md',
-    'docs/releasing.md',
-    'docs/release-verification.md',
     'dist/index.js',
     'dist/index.cjs',
     'dist/index.d.ts',

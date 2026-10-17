@@ -31,8 +31,7 @@ Individual checks are `npm run lint`, `npm run typecheck`, `npm test`,
 [technical design](docs/library_design.md) for the module and test structure.
 
 `npm run verify` enforces coverage thresholds and checks the actual packed
-package in isolated consumers. For publication steps and what each check covers,
-see [Releasing v1.0.0](docs/releasing.md).
+package in isolated consumers.
 
 ## What the tests mean
 

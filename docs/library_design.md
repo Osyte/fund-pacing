@@ -146,8 +146,8 @@ All of these are dev-time only and contribute nothing to consumer bundles.
 
 There is no changesets workflow or automatic publishing job. `prepack` rebuilds
 the package and `prepublishOnly` runs full verification. Publishing remains an
-explicit maintainer action. See [Releasing v1.0.0](releasing.md), `package.json`,
-and `.github/workflows/ci.yml` for the current checks and release process.
+explicit maintainer action. See `package.json` and `.github/workflows/ci.yml`
+for the current checks.
 
 ### Relevant configured TypeScript flags
 
