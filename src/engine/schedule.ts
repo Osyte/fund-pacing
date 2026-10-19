@@ -8,7 +8,7 @@ import {
   perPeriodRate,
   precomputeCommitmentCalls,
 } from './rates.js'
-import { type PeriodState, ZERO_STATE, stepPeriod } from './recurrence.js'
+import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 /**
  * Layer 1 — periods and percentages.

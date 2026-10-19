@@ -6,7 +6,7 @@
  * for the model arithmetic.
  */
 
-import { type RoundFn, allocate } from '../internal/money.js'
+import { allocate, type RoundFn } from '../internal/money.js'
 import type { DistributionSchedule, Frequency, ModelConfig } from '../types.js'
 
 /**

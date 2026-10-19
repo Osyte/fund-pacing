@@ -14,13 +14,8 @@ import type {
   Transaction,
   VariancePeriod,
 } from '../types.js'
-import {
-  callAmountAt,
-  distributionAt,
-  perPeriodRate,
-  precomputeCommitmentCalls,
-} from './rates.js'
-import { type PeriodState, ZERO_STATE, stepPeriod } from './recurrence.js'
+import { callAmountAt, distributionAt, perPeriodRate, precomputeCommitmentCalls } from './rates.js'
+import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 interface Bucket {
   called: number

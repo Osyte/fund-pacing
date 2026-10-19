@@ -121,9 +121,15 @@ describe('spec §5 invariants', () => {
             const period = revised.find((p) => p.source === 'actual' && tx.date <= p.periodEnd)
             if (!period) continue
             if (tx.type === 'call') {
-              expectedCalls.set(period.periodEnd, (expectedCalls.get(period.periodEnd) ?? 0) + tx.amount)
+              expectedCalls.set(
+                period.periodEnd,
+                (expectedCalls.get(period.periodEnd) ?? 0) + tx.amount,
+              )
             } else if (tx.type === 'distribution') {
-              expectedDists.set(period.periodEnd, (expectedDists.get(period.periodEnd) ?? 0) + tx.amount)
+              expectedDists.set(
+                period.periodEnd,
+                (expectedDists.get(period.periodEnd) ?? 0) + tx.amount,
+              )
             }
           }
 

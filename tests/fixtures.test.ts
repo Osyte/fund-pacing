@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildSchedule, project, type ModelConfig } from '../src/index.js'
+import { buildSchedule, type ModelConfig, project } from '../src/index.js'
 
 const FOUR_YEAR: ModelConfig = {
   periodsPerYear: 4,
