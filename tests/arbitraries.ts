@@ -4,19 +4,20 @@ import type { Frequency, ModelConfig, Transaction } from '../src/index.js'
 const frequency = fc.constantFrom<Frequency>(1, 2, 4)
 
 /** Rates that always satisfy the commitment-basis sum constraint. */
-function ratesUpToOne(maxLength: number): fc.Arbitrary<number[]> {
-  return fc.array(fc.integer({ min: 0, max: 1000 }), { minLength: 1, maxLength }).map((weights) => {
-    const total = weights.reduce((a, b) => a + b, 0)
-    if (total === 0) return weights.map(() => 0)
-    return weights.map((w) => w / total)
-  })
+function ratesUpToOne(length: number): fc.Arbitrary<number[]> {
+  return fc
+    .array(fc.integer({ min: 0, max: 1000 }), { minLength: length, maxLength: length })
+    .map((weights) => {
+      const total = weights.reduce((a, b) => a + b, 0)
+      if (total === 0) return weights.map(() => 0)
+      return weights.map((w) => w / total)
+    })
 }
 
 export const arbConfig: fc.Arbitrary<ModelConfig> = fc
   .record({
     periodsPerYear: frequency,
     termYears: fc.integer({ min: 1, max: 12 }),
-    callableFraction: fc.double({ min: 0.1, max: 1, noNaN: true }),
     growthRate: fc.double({ min: -0.5, max: 0.5, noNaN: true }),
     yieldRate: fc.double({ min: 0, max: 0.15, noNaN: true }),
     bowFactor: fc.double({ min: 0.2, max: 4, noNaN: true }),
@@ -26,11 +27,9 @@ export const arbConfig: fc.Arbitrary<ModelConfig> = fc
   })
   .chain((base) => {
     const termPeriods = base.termYears * base.periodsPerYear
-    const callablePeriods = Math.max(1, Math.round(termPeriods * base.callableFraction))
-    return ratesUpToOne(callablePeriods).map((rates) => ({
+    return ratesUpToOne(termPeriods).map((rates) => ({
       periodsPerYear: base.periodsPerYear,
       termPeriods,
-      callablePeriods,
       growthRate: base.growthRate,
       yieldRate: base.yieldRate,
       bowFactor: base.bowFactor,

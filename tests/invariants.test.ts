@@ -20,11 +20,9 @@ describe('spec §5 invariants', () => {
       fc.property(arbConfig, arbCommitment, arbStartDate, (config, commitment, startDate) => {
         const rates = config.callSchedule.rates
         const sum = rates.reduce((a, b) => a + b, 0)
-        // Only meaningful for commitment basis with rates summing to 1 and a
-        // callable window long enough to contain them.
+        // Only meaningful for commitment basis with rates summing to 1.
         fc.pre(config.callSchedule.basis === 'commitment')
         fc.pre(Math.abs(sum - 1) < 1e-12)
-        fc.pre(rates.length <= config.callablePeriods)
 
         const rows = project(config, { commitment, startDate })
         const last = rows[rows.length - 1]
@@ -144,16 +142,18 @@ describe('spec §5 invariants', () => {
     )
   })
 
-  it('#8 calls stop after the investment period', () => {
+  it('#8 call schedules map one-to-one onto modeled periods', () => {
     fc.assert(
       fc.property(arbConfig, arbCommitment, arbStartDate, (config, commitment, startDate) => {
         const schedule = buildSchedule(config)
         const rows = project(config, { commitment, startDate })
+        expect(schedule).toHaveLength(config.termPeriods)
+        expect(rows).toHaveLength(config.termPeriods)
         for (const s of schedule) {
-          if (s.index > config.callablePeriods) expect(s.callRate).toBe(0)
+          expect(s.callRate).toBe(config.callSchedule.rates[s.index])
         }
         for (const r of rows) {
-          if (r.index > config.callablePeriods) expect(r.called).toBe(0)
+          if (config.callSchedule.rates[r.index] === 0) expect(r.called).toBe(0)
         }
       }),
       RUNS,
@@ -166,11 +166,10 @@ describe('overcalling (spec D8)', () => {
     const config = {
       periodsPerYear: 4 as const,
       termPeriods: 8,
-      callablePeriods: 4,
       growthRate: 0.1,
       yieldRate: 0,
       bowFactor: 2.5,
-      callSchedule: { basis: 'commitment' as const, rates: [0.5, 0.5] },
+      callSchedule: { basis: 'commitment' as const, rates: [0.5, 0.5, 0, 0, 0, 0, 0, 0] },
       terminalLiquidation: true,
       termExtensionYears: 3,
     }

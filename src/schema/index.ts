@@ -40,7 +40,6 @@ export const ModelConfigSchema = z
   .object({
     periodsPerYear: z.union([z.literal(1), z.literal(2), z.literal(4)]),
     termPeriods: z.number().int().min(1),
-    callablePeriods: z.number().int().min(0),
     growthRate: z.number().finite().gt(-1),
     yieldRate: z.number().finite().min(0),
     bowFactor: z.number().finite().positive(),
@@ -49,9 +48,9 @@ export const ModelConfigSchema = z
     terminalLiquidation: z.boolean(),
     termExtensionYears: z.number().finite().min(0),
   })
-  .refine((c) => c.callablePeriods <= c.termPeriods, {
-    message: 'callablePeriods cannot exceed termPeriods',
-    path: ['callablePeriods'],
+  .refine((c) => c.callSchedule.rates.length === c.termPeriods, {
+    message: 'callSchedule.rates must contain exactly one rate per term period',
+    path: ['callSchedule', 'rates'],
   })
   .refine(
     (c) =>

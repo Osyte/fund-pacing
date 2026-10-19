@@ -36,18 +36,20 @@ import { buildSchedule, type ModelConfig } from '@osyte/fund-pacing'
 const config = {
   periodsPerYear: 4,
   termPeriods: 40,          // 10 years, quarterly
-  callablePeriods: 20,      // 5-year investment period
   growthRate: 0.15,         // per annum
   yieldRate: 0,
   bowFactor: 2.5,
-  callSchedule: { basis: 'unfunded', rates: [0.25, 0.30, 0.40, 0.20] },
+  callSchedule: {
+    basis: 'unfunded',
+    rates: [0.25, 0.30, 0.40, 0.20, ...Array(36).fill(0)],
+  },
   terminalLiquidation: true,
   termExtensionYears: 3,
 } satisfies ModelConfig
 
 buildSchedule(config)
-// [{ index: 0, callRate: 0, calledFraction: 0, unfundedFraction: 1, navFraction: 0, ... },
-//  { index: 1, callRate: 0.25, calledFraction: 0.25, ... }, ...]
+// [{ index: 0, callRate: 0.25, calledFraction: 0.25, ... },
+//  { index: 1, callRate: 0.30, calledFraction: 0.475, ... }, ...]
 ```
 
 Dimensionless: no money, no dates. Cheap enough to run on every keystroke.
@@ -62,8 +64,8 @@ const rows = project(config, {
   startDate: '2024-01-15',
 })
 
-rows[1]
-// { index: 1, periodEnd: '2024-06-30', source: 'forecast',
+rows[0]
+// { index: 0, periodEnd: '2024-03-31', source: 'forecast',
 //   called: 250000000, distributed: 0, unfunded: 750000000,
 //   nav: 250000000, dpi: 0, rvpi: 1, tvpi: 1, ... }
 ```
@@ -101,7 +103,7 @@ These are enforced, not assumed. Getting them wrong is the single largest source
 | Dates | ISO `YYYY-MM-DD` strings. Never `Date` objects |
 | Money | Integer **minor units** (cents) as `number` |
 | Rates | Decimals — `0.25` is 25%. Values outside `[0, 1]` are rejected, never coerced |
-| Periods | Zero-indexed; period 0 is inception |
+| Periods | Zero-indexed; period 0 is the first modeled cash-flow period |
 
 **Schedule basis is explicit and never inferred.** A rate can mean two different things, and conflating them silently under-calls by a third:
 
@@ -112,6 +114,8 @@ callSchedule: { basis: 'unfunded',   rates: [...] }  // rate on remaining unfund
 distributionSchedule: { basis: 'commitment', rates: [...] }  // share of commitment
 distributionSchedule: { basis: 'nav',        rates: [...] }  // fraction of prevailing NAV
 ```
+
+`callSchedule.rates` must contain exactly one rate per `termPeriods` period. Use explicit `0` rates for periods with no calls.
 
 Note that an `unfunded`-basis schedule generally does *not* call 100% — a `[0.30, 0.35, 0.40, 0.35, 0.20]` profile leaves 14.2% permanently uncalled. That is intended and tested.
 
@@ -176,4 +180,3 @@ The prior Python implementation and its documentation disagree on units, default
 - [`docs/library_design.md`](docs/library_design.md) — technical design: module structure, dependency rationale, toolchain
 - [`docs/known_issues.md`](docs/known_issues.md) — open model conventions and known validation gaps, numbered K1–K9
 - [`fixtures/`](fixtures/) — schedule examples and a synthetic transaction history, for regression fixtures
-
