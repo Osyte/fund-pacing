@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { type ModelConfig, project, reproject, validateConfig } from '../src/index.js'
+import {
+  type ModelConfig,
+  PacingConfigError,
+  project,
+  reproject,
+  validateConfig,
+} from '../src/index.js'
 
 const CONFIG: ModelConfig = {
   periodsPerYear: 4,
@@ -137,6 +143,10 @@ describe('reproject', () => {
 })
 
 describe('validation', () => {
+  function validateMalformed(input: unknown) {
+    return validateConfig(input as ModelConfig)
+  }
+
   it('rejects percent-valued rates rather than coercing them', () => {
     const result = validateConfig({
       ...CONFIG,
@@ -202,8 +212,39 @@ describe('validation', () => {
     if (!result.ok) expect(result.issues.length).toBeGreaterThanOrEqual(3)
   })
 
+  it('returns validation issues instead of throwing for malformed config shapes', () => {
+    const cases = [
+      { input: null, code: 'INVALID_CONFIG', path: 'config' },
+      {
+        input: { ...CONFIG, callSchedule: undefined },
+        code: 'INVALID_SCHEDULE',
+        path: 'callSchedule',
+      },
+      { input: { ...CONFIG, callSchedule: null }, code: 'INVALID_SCHEDULE', path: 'callSchedule' },
+      { input: { ...CONFIG, callSchedule: {} }, code: 'INVALID_RATES', path: 'callSchedule.rates' },
+      {
+        input: { ...CONFIG, distributionSchedule: null },
+        code: 'INVALID_SCHEDULE',
+        path: 'distributionSchedule',
+      },
+    ]
+
+    for (const { input, code, path } of cases) {
+      const result = validateMalformed(input)
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.issues.some((issue) => issue.code === code && issue.path === path)).toBe(true)
+      }
+    }
+  })
+
   it('throws from engine functions given an invalid config', () => {
     expect(() => project({ ...CONFIG, bowFactor: -1 }, FUND)).toThrow(/Invalid ModelConfig/)
+  })
+
+  it('throws PacingConfigError from engine functions for malformed config shapes', () => {
+    const malformed = { ...CONFIG, callSchedule: undefined } as unknown as ModelConfig
+    expect(() => project(malformed, FUND)).toThrow(PacingConfigError)
   })
 
   it('rejects non-integer commitments', () => {

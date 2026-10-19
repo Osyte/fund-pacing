@@ -33,9 +33,9 @@ No issue is raised. These are usually data-entry errors and a validation warning
 
 ## Validation
 
-### K6 — `validateConfig` throws on a structurally incomplete config
+### K6 — Resolved: `validateConfig` returns issues for structurally incomplete configs
 
-It reports every rule violation on a well-formed object, but a config with `callSchedule` missing raises a `TypeError` instead of returning `{ ok: false }`. Use the zod schema in `@osyte/fund-pacing/schema` to validate untrusted payloads until this is fixed.
+`validateConfig(config: ModelConfig)` keeps its public signature but now defensively handles malformed runtime shapes, including missing or malformed schedules. It returns `{ ok: false, issues }` instead of leaking `TypeError`. Engine functions still throw `PacingConfigError` for invalid configs.
 
 ### K7 — The zod schemas are looser than `validateConfig` on dates
 
