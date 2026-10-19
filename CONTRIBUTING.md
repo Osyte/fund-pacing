@@ -66,3 +66,26 @@ identified design questions. Do not update snapshots for wording-only changes.
 ## Reporting a problem
 
 Open an issue with a minimal reproduction: the config, fund terms, and actuals as JSON, plus the output you got and the output you expected.
+
+## Publishing a version
+
+Update the version in `package.json` and `package-lock.json`, add its changelog
+entry, and merge the reviewed changes into `main`. Once CI passes, create and
+push an annotated tag matching the package version, for example `v1.0.1`.
+The **Publish to npm** workflow checks out that tag, verifies that its commit is
+on `main`, and runs the full release checks before publishing through npm's
+trusted publishing with provenance. No npm token secret is needed.
+
+In the npm package's **Settings → Trusted publishing**, authorize GitHub Actions
+with organization `Osyte`, repository `fund-pacing`, workflow filename
+`publish.yml`, no environment name, and permission to run `npm publish`.
+The filename and organization must match exactly. See
+[npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
+
+To check the workflow without publishing, open **Actions → Publish to npm → Run
+workflow**, enter an existing version tag, and leave **dry_run** enabled. A dry
+run verifies the package but does not test the npm OIDC authorization itself.
+Existing published versions are skipped on publishing runs. After a new version
+is available on npm, create the GitHub release from the same tag and its
+changelog entry. Version 1.0.0 was published manually; provenance applies to
+future versions published by this workflow.
