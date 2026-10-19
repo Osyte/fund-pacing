@@ -7,6 +7,7 @@
  */
 
 import { allocate, type RoundFn } from '../internal/money.js'
+import { termPeriodsFor } from '../internal/term.js'
 import type { DistributionSchedule, Frequency, ModelConfig } from '../types.js'
 
 /**
@@ -27,7 +28,7 @@ export function perPeriodRate(annual: number, periodsPerYear: Frequency): number
  * explicit zero rates in the schedule.
  */
 export function callRateAt(config: ModelConfig, index: number): number {
-  if (index < 0 || index >= config.termPeriods) return 0
+  if (index < 0 || index >= termPeriodsFor(config)) return 0
   return config.callSchedule.rates[index] ?? 0
 }
 
@@ -45,8 +46,7 @@ export function precomputeCommitmentCalls(
 ): number[] | undefined {
   if (config.callSchedule.basis !== 'commitment') return undefined
   const rates = config.callSchedule.rates
-  const sum = rates.reduce((a, b) => a + b, 0)
-  return allocate(round(commitment * sum), rates, round)
+  return allocate(commitment, rates, round)
 }
 
 /**
@@ -99,7 +99,7 @@ export function callAmountAt(
   precomputed: readonly number[] | undefined,
   round: RoundFn,
 ): number {
-  if (index < 0 || index >= config.termPeriods) return 0
+  if (index < 0 || index >= termPeriodsFor(config)) return 0
   if (precomputed) return precomputed[index] ?? 0
 
   const rate = config.callSchedule.rates[index] ?? 0

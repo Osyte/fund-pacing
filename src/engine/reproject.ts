@@ -5,7 +5,8 @@ import {
   assertValidTransactions,
 } from '../internal/guards.js'
 import { multiples } from '../internal/metrics.js'
-import { roundMinor } from '../internal/money.js'
+import { assertSafeMoney, roundMinor } from '../internal/money.js'
+import { termPeriodsFor } from '../internal/term.js'
 import type {
   CashFlowPeriod,
   FundTerms,
@@ -77,6 +78,17 @@ function row(
   state: PeriodState,
   commitment: number,
 ): CashFlowPeriod {
+  for (const amount of [
+    called,
+    distributed,
+    state.calledCumulative,
+    state.distributedCumulative,
+    state.nav,
+    commitment - state.calledCumulative,
+    distributed - called,
+  ]) {
+    assertSafeMoney(amount)
+  }
   const { dpi, rvpi, tvpi } = multiples(
     state.calledCumulative,
     state.distributedCumulative,
@@ -143,10 +155,14 @@ function runProjection(
       const bucket = buckets.get(t)
       const called = bucket?.called ?? 0
       const distributed = bucket?.distributed ?? 0
-      const navGrown = t === 0 ? 0 : roundMinor(state.nav * (1 + growth))
       // A reported NAV overrides the modelled one and becomes the base for
       // everything forward. Actual amounts are reproduced verbatim.
-      const nav = bucket?.nav ?? Math.max(0, navGrown + called - distributed)
+      const nav =
+        bucket?.nav ??
+        Math.max(
+          0,
+          roundMinor((t === 0 ? 0 : roundMinor(state.nav * (1 + growth))) + called) - distributed,
+        )
 
       state = {
         calledCumulative: state.calledCumulative + called,
@@ -185,7 +201,7 @@ function runProjection(
 }
 
 /**
- * Layer 3 — revised forecast from actuals.
+ * Update an investment forecast using actual history.
  *
  * `actuals` is the complete transaction set, not a delta: add, edit, and
  * delete are all the same call. The forecast resumes at the fund's actual age
@@ -203,11 +219,12 @@ export function reproject(
   const { buckets, lastActualIndex } = bucketTransactions(actuals, fund, config)
 
   // Term extension: only actuals can outlive the term (spec D5).
+  const termPeriods = termPeriodsFor(config)
   const extension = Math.round(config.termExtensionYears * config.periodsPerYear)
   const effectiveTermPeriods =
-    lastActualIndex >= config.termPeriods ? lastActualIndex + 1 + extension : config.termPeriods
+    lastActualIndex >= termPeriods ? lastActualIndex + 1 + extension : termPeriods
 
-  const baseline = runProjection(config, fund, new Map(), -1, config.termPeriods)
+  const baseline = runProjection(config, fund, new Map(), -1, termPeriods)
   const revised =
     lastActualIndex < 0
       ? baseline
@@ -238,7 +255,7 @@ export function reproject(
 }
 
 /**
- * Layer 2 — dates and amounts.
+ * Forecast a prospective or new investment in dated monetary amounts.
  *
  * Implemented as the zero-actuals case of `reproject`, which makes the
  * "empty actuals is a no-op" invariant true by construction rather than by

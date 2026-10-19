@@ -9,11 +9,22 @@
 
 import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
-import { buildSchedule, project, reproject } from '../src/index.js'
+import { buildSchedule, PacingInputError, project, reproject } from '../src/index.js'
 import { periodEndDates } from '../src/internal/calendar.js'
 import { arbCommitment, arbConfig, arbStartDate, arbTransactions } from './arbitraries.js'
 
 const RUNS = { numRuns: 300 }
+
+// Arbitrary histories can span decades. Successful monetary projections must
+// obey the invariants; separately tested precision overflows reject the input.
+function representableReprojection(...args: Parameters<typeof reproject>) {
+  try {
+    return reproject(...args)
+  } catch (error) {
+    if (error instanceof PacingInputError && error.code === 'NUMERIC_OVERFLOW') fc.pre(false)
+    throw error
+  }
+}
 
 describe('spec §5 invariants', () => {
   it('#1 commitment-basis schedules call exactly the commitment', () => {
@@ -68,7 +79,7 @@ describe('spec §5 invariants', () => {
         arbStartDate,
         arbTransactions,
         (config, commitment, startDate, actuals) => {
-          const { revised } = reproject(config, { commitment, startDate }, actuals)
+          const { revised } = representableReprojection(config, { commitment, startDate }, actuals)
           for (const p of revised) {
             expect(p.unfunded + p.calledCumulative).toBe(commitment)
             expect(p.netCashFlow).toBe(p.distributed - p.called)
@@ -87,7 +98,11 @@ describe('spec §5 invariants', () => {
         arbStartDate,
         arbTransactions,
         (config, commitment, startDate, actuals) => {
-          const { revised, baseline } = reproject(config, { commitment, startDate }, actuals)
+          const { revised, baseline } = representableReprojection(
+            config,
+            { commitment, startDate },
+            actuals,
+          )
           for (const p of [...revised, ...baseline]) {
             expect(p.nav).toBeGreaterThanOrEqual(0)
           }
@@ -105,7 +120,7 @@ describe('spec §5 invariants', () => {
         arbStartDate,
         arbTransactions,
         (config, commitment, startDate, actuals) => {
-          const { revised } = reproject(config, { commitment, startDate }, actuals)
+          const { revised } = representableReprojection(config, { commitment, startDate }, actuals)
 
           const expectedCalls = new Map<string, number>()
           const expectedDists = new Map<string, number>()
@@ -143,13 +158,15 @@ describe('spec §5 invariants', () => {
     )
   })
 
-  it('#8 call schedules map one-to-one onto modeled periods', () => {
+  it('#8 fund life derives the period count and call schedules map one-to-one onto it', () => {
     fc.assert(
       fc.property(arbConfig, arbCommitment, arbStartDate, (config, commitment, startDate) => {
         const schedule = buildSchedule(config)
         const rows = project(config, { commitment, startDate })
-        expect(schedule).toHaveLength(config.termPeriods)
-        expect(rows).toHaveLength(config.termPeriods)
+        const termPeriods = config.fund_life * config.periodsPerYear
+        expect(schedule).toHaveLength(termPeriods)
+        expect(rows).toHaveLength(termPeriods)
+        expect(reproject(config, { commitment, startDate }).baseline).toHaveLength(termPeriods)
         for (const s of schedule) {
           expect(s.callRate).toBe(config.callSchedule.rates[s.index])
         }
@@ -176,7 +193,7 @@ describe('spec §5 invariants', () => {
           rates[termPeriods - 1] = 1 - baseRate * (termPeriods - 1)
           const config = {
             periodsPerYear: 4 as const,
-            termPeriods,
+            fund_life: termPeriods / 4,
             growthRate: 0,
             yieldRate: 0,
             bowFactor: 1,
@@ -206,7 +223,7 @@ describe('overcalling (spec D8)', () => {
   it('permits negative unfunded and flags it', () => {
     const config = {
       periodsPerYear: 4 as const,
-      termPeriods: 8,
+      fund_life: 2,
       growthRate: 0.1,
       yieldRate: 0,
       bowFactor: 2.5,

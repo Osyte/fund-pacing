@@ -1,22 +1,31 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/). Until 1.0, minor versions may include breaking changes.
+All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/). Breaking changes to the public interface require a new major version.
 
 ## Unreleased
 
-- Removed `callablePeriods`; `callSchedule.rates` now has one entry per `termPeriods` period, with explicit `0` rates for no-call periods.
-- Forecast calls can begin in period 0, and `termPeriods` now maps directly to output rows `0..termPeriods - 1`.
-- Commitment-basis `reproject` forecasts now rescale remaining calls after actuals so total called capital returns to commitment.
-- Commitment-basis call schedules now must sum to 1.
-- Added validation errors for call schedules whose length does not match `termPeriods`.
-- Hardened `validateConfig` so malformed runtime config shapes return validation issues instead of throwing `TypeError`.
+## 1.0.0
 
-## 0.1.0
+Initial stable release.
 
-Initial release.
-
-- `buildSchedule`: dimensionless Takahashi–Alexander pacing curve from model parameters
-- `project`: dated cash flows in minor units from a commitment and start date
-- `reproject`: revised forecast from observed calls, distributions, and NAVs, with baseline and variance
-- `validateConfig` and optional zod schemas under `@osyte/fund-pacing/schema`
-- Explicit schedule bases (`commitment`, `unfunded`, `nav`), geometric rate conversion, exact conservation including when overcalled
+- Requires Node 22 or later; CI verifies Node 22 and 24.
+- `buildSchedule`: dimensionless Takahashi–Alexander curves for exploring model assumptions.
+- `project`: dated cash flows in minor units for prospective or new investments.
+- `reproject`: revised forecasts from observed calls, distributions, and NAVs, with baseline and variance.
+- `validateConfig`: reusable, non-throwing configuration validation, including malformed runtime shapes.
+- Optional Zod schemas under `@osyte/fund-pacing/schema`.
+- `fund_life` in years replaces the development-era `termPeriods` input. The library derives periods as `fund_life * periodsPerYear` and rejects partial periods without rounding. Migrate with `fund_life = termPeriods / periodsPerYear`.
+- Full-term call schedules replace `callablePeriods`, with explicit zeros for periods without calls. Schedule lengths are validated against the derived period count.
+- Period 0 is the first modeled cash-flow period and consumes `callSchedule.rates[0]`.
+- Commitment-basis call schedules must sum to 1. After actuals, remaining positive forecast calls are rescaled to remaining commitment; exhausted call schedules do not create new call periods.
+- Explicit schedule bases (`commitment`, `unfunded`, `nav`), geometric annual-rate conversion, and exact capital conservation including when overcalled.
+- Accepted v1 conventions for frequency-specific bow calibration (K1), pre-start transaction bucketing and application warnings (K5), schema/engine validation boundaries (K7), readonly result sharing (K8), and baseline-horizon variance (K9).
+- Installation, configuration, user, results, and validation guides, with a concise README and contribution guidance.
+- Aligned Biome tooling and release verification across the configured Node CI versions.
+- Fixed rounding for tiny commitments and normalized accepted near-100% schedules to exact commitment totals.
+- Rejected sparse arrays, malformed runtime fund/transaction containers, unsafe monetary values, numeric overflow, and projection dates beyond year 9999 with structured errors.
+- Made parsed config schemas directly assignable to the core TypeScript config, including strict optional-property checking.
+- Added enforced coverage thresholds, recurrence/rate/allocation regression tests, executable documentation checks, and isolated tarball consumer tests for ESM/CJS, optional schemas, strict types, and browser bundling.
+- Included linked documentation in the npm package, rebuilt output before packing, and required full verification before publishing. Updated vulnerable development tooling.
+- Added hand-calculated end-to-end regression cases for the release invariants.
+- Fixed packed-consumer verification during `npm publish --dry-run` and added a CI regression check for inherited dry-run configuration.

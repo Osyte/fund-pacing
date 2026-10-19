@@ -23,18 +23,18 @@ export type CallSchedule = CommitmentBasisSchedule | UnfundedBasisSchedule
 export type DistributionSchedule = CommitmentBasisSchedule | NavBasisSchedule
 
 /**
- * Fully resolved model configuration. Every field is required; the engine
- * applies no defaults and has no knowledge that defaults exist.
+ * Fully resolved model configuration. All fields except distributionSchedule
+ * are required. Omitting that override selects the modeled bow/yield curve.
  */
 export interface ModelConfig {
   readonly periodsPerYear: Frequency
-  /** Total modeled cash-flow periods. Output indices run from 0 to termPeriods - 1. */
-  readonly termPeriods: number
+  /** Fund life in years. fund_life * periodsPerYear must be a positive safe integer. */
+  readonly fund_life: number
   /** Per annum, decimal. Converted to per-period geometrically. */
   readonly growthRate: number
   /** Per annum, decimal. Converted to per-period geometrically. */
   readonly yieldRate: number
-  /** Distribution curve shape. Any value > 0. */
+  /** Distribution curve shape. Any value > 0; calibrated for the selected frequency. */
   readonly bowFactor: number
   readonly callSchedule: CallSchedule
   /** Optional explicit override of the modelled bow curve. */
@@ -45,7 +45,7 @@ export interface ModelConfig {
   readonly termExtensionYears: number
 }
 
-/** Layer 1 output. Dimensionless: independent of commitment and calendar. */
+/** Curve output. Dimensionless: independent of commitment and calendar. */
 export interface SchedulePeriod {
   readonly index: number
   readonly callRate: number
@@ -57,7 +57,7 @@ export interface SchedulePeriod {
 }
 
 export interface FundTerms {
-  /** Minor units (e.g. cents). Must be a positive integer. */
+  /** Minor units (e.g. cents). Must be a positive safe integer. */
   readonly commitment: number
   /** ISO `YYYY-MM-DD`. */
   readonly startDate: string
@@ -65,7 +65,7 @@ export interface FundTerms {
 
 export type FlowSource = 'actual' | 'forecast'
 
-/** Layer 2/3 output. Dated and denominated in minor units. */
+/** Investment cash-flow output. Dated and denominated in minor units. */
 export interface CashFlowPeriod {
   readonly index: number
   readonly periodEnd: string
@@ -90,7 +90,7 @@ export interface Transaction {
   /** ISO `YYYY-MM-DD`. */
   readonly date: string
   readonly type: TransactionType
-  /** Minor units, always positive. */
+  /** Non-negative safe integer minor units; zero is valid. */
   readonly amount: number
 }
 
@@ -104,10 +104,11 @@ export interface VariancePeriod {
 }
 
 export interface ReprojectResult {
-  /** The original T=0 forecast, unchanged. */
+  /** Original T=0 forecast. May share the revised array when there are no actuals. */
   readonly baseline: readonly CashFlowPeriod[]
   /** Actuals spliced in, remainder re-forecast. */
   readonly revised: readonly CashFlowPeriod[]
+  /** Revised minus baseline over shared periods; no rows beyond the baseline horizon. */
   readonly variance: readonly VariancePeriod[]
   /** Boundary between actual and forecast. `null` when there are no actuals. */
   readonly asOf: string | null

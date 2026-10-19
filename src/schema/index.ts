@@ -7,6 +7,8 @@
  */
 
 import { z } from 'zod'
+import { termPeriodsFor } from '../internal/term.js'
+import type { ModelConfig } from '../types.js'
 
 const rate = z.number().finite().min(0).max(1)
 const rates = z.array(rate)
@@ -39,7 +41,7 @@ export const DistributionScheduleSchema = z.discriminatedUnion('basis', [
 export const ModelConfigSchema = z
   .object({
     periodsPerYear: z.union([z.literal(1), z.literal(2), z.literal(4)]),
-    termPeriods: z.number().int().min(1),
+    fund_life: z.number().finite().positive(),
     growthRate: z.number().finite().gt(-1),
     yieldRate: z.number().finite().min(0),
     bowFactor: z.number().finite().positive(),
@@ -48,7 +50,12 @@ export const ModelConfigSchema = z
     terminalLiquidation: z.boolean(),
     termExtensionYears: z.number().finite().min(0),
   })
-  .refine((c) => c.callSchedule.rates.length === c.termPeriods, {
+  .refine((c) => Number.isSafeInteger(termPeriodsFor(c)) && termPeriodsFor(c) >= 1, {
+    message:
+      'fund_life * periodsPerYear must be a positive safe integer; partial periods are not rounded',
+    path: ['fund_life'],
+  })
+  .refine((c) => c.callSchedule.rates.length === termPeriodsFor(c), {
     message: 'callSchedule.rates must contain exactly one rate per term period',
     path: ['callSchedule', 'rates'],
   })
@@ -61,6 +68,10 @@ export const ModelConfigSchema = z
       path: ['callSchedule', 'rates'],
     },
   )
+  .transform((config): ModelConfig => {
+    const { distributionSchedule, ...required } = config
+    return distributionSchedule === undefined ? required : { ...required, distributionSchedule }
+  })
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
 

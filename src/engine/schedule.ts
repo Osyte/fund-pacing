@@ -1,5 +1,6 @@
 import { assertValidConfig } from '../internal/guards.js'
 import { noRound } from '../internal/money.js'
+import { termPeriodsFor } from '../internal/term.js'
 import type { ModelConfig, SchedulePeriod } from '../types.js'
 import {
   callAmountAt,
@@ -11,7 +12,7 @@ import {
 import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 /**
- * Layer 1 — periods and percentages.
+ * Create curves and explore assumptions using periods and percentages.
  *
  * Dimensionless: driven with `commitment = 1` and identity rounding, so the
  * output is independent of both commitment size and calendar. Cheap enough to
@@ -21,7 +22,7 @@ export function buildSchedule(config: ModelConfig): SchedulePeriod[] {
   assertValidConfig(config)
 
   const growth = perPeriodRate(config.growthRate, config.periodsPerYear)
-  const term = config.termPeriods
+  const term = termPeriodsFor(config)
 
   const out: SchedulePeriod[] = []
   let state: PeriodState = ZERO_STATE

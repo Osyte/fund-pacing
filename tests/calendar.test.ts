@@ -53,7 +53,8 @@ describe('calendar', () => {
       process.env.TZ = tz
       results.push(periodEndDates('2024-01-01', 4, 4))
     }
-    process.env.TZ = original
+    if (original === undefined) delete process.env.TZ
+    else process.env.TZ = original
     expect(results[0]).toEqual(results[1])
     expect(results[1]).toEqual(results[2])
   })
