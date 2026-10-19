@@ -72,20 +72,24 @@ Open an issue with a minimal reproduction: the config, fund terms, and actuals a
 Update the version in `package.json` and `package-lock.json`, add its changelog
 entry, and merge the reviewed changes into `main`. Once CI passes, create and
 push an annotated tag matching the package version, for example `v1.0.1`.
-The **Publish to npm** workflow checks out that tag, verifies that its commit is
-on `main`, and runs the full release checks before publishing through npm's
-trusted publishing with provenance. No npm token secret is needed.
+The **Stage npm release** workflow checks out that tag, verifies that its commit
+is on `main`, and runs the full release checks before uploading a staged package
+through npm's trusted publishing with provenance. No npm token secret is needed.
 
 In the npm package's **Settings → Trusted publishing**, authorize GitHub Actions
 with organization `Osyte`, repository `fund-pacing`, workflow filename
-`publish.yml`, no environment name, and permission to run `npm publish`.
+`publish.yml`, and no environment name. Keep direct `npm publish` disabled;
+the connection allows `npm stage publish` by default.
 The filename and organization must match exactly. See
 [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
 
-To check the workflow without publishing, open **Actions → Publish to npm → Run
+To check the workflow without uploading, open **Actions → Stage npm release → Run
 workflow**, enter an existing version tag, and leave **dry_run** enabled. A dry
 run verifies the package but does not test the npm OIDC authorization itself.
-Existing published versions are skipped on publishing runs. After a new version
-is available on npm, create the GitHub release from the same tag and its
-changelog entry. Version 1.0.0 was published manually; provenance applies to
-future versions published by this workflow.
+Existing published versions are skipped on staging runs. A successful staging
+run does not make the new version installable: review it in npm's **Staged
+Packages** tab and approve it with 2FA after scanning completes. The workflow
+never approves releases automatically. Once the new version is available on
+npm, create the GitHub release from the same tag and its changelog entry.
+Version 1.0.0 was published manually; provenance applies to future versions
+published by this workflow.
