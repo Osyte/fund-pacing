@@ -3,13 +3,13 @@ import type { Frequency, ModelConfig, Transaction } from '../src/index.js'
 
 const frequency = fc.constantFrom<Frequency>(1, 2, 4)
 
-/** Rates that always satisfy the commitment-basis sum constraint. */
-function ratesUpToOne(length: number): fc.Arbitrary<number[]> {
+/** Rates that satisfy the commitment-basis full-commitment sum constraint. */
+function ratesSumOne(length: number): fc.Arbitrary<number[]> {
   return fc
     .array(fc.integer({ min: 0, max: 1000 }), { minLength: length, maxLength: length })
     .map((weights) => {
       const total = weights.reduce((a, b) => a + b, 0)
-      if (total === 0) return weights.map(() => 0)
+      if (total === 0) return weights.map((_, i) => (i === 0 ? 1 : 0))
       return weights.map((w) => w / total)
     })
 }
@@ -27,7 +27,7 @@ export const arbConfig: fc.Arbitrary<ModelConfig> = fc
   })
   .chain((base) => {
     const termPeriods = base.termYears * base.periodsPerYear
-    return ratesUpToOne(termPeriods).map((rates) => ({
+    return ratesSumOne(termPeriods).map((rates) => ({
       periodsPerYear: base.periodsPerYear,
       termPeriods,
       growthRate: base.growthRate,

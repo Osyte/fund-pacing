@@ -14,7 +14,13 @@ import type {
   Transaction,
   VariancePeriod,
 } from '../types.js'
-import { callAmountAt, distributionAt, perPeriodRate, precomputeCommitmentCalls } from './rates.js'
+import {
+  callAmountAt,
+  distributionAt,
+  perPeriodRate,
+  precomputeCommitmentCalls,
+  rescaleCommitmentCallsAfterActuals,
+} from './rates.js'
 import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 interface Bucket {
@@ -96,6 +102,14 @@ function row(
   }
 }
 
+function calledThroughActuals(buckets: Map<number, Bucket>, lastActualIndex: number): number {
+  let called = 0
+  for (const [index, bucket] of buckets) {
+    if (index <= lastActualIndex) called += bucket.called
+  }
+  return called
+}
+
 /**
  * The single projection driver. `baseline` and `revised` are both produced by
  * this, so they cannot diverge in anything but the actuals supplied.
@@ -109,7 +123,14 @@ function runProjection(
 ): CashFlowPeriod[] {
   const growth = perPeriodRate(config.growthRate, config.periodsPerYear)
   const periodEnds = periodEndDates(fund.startDate, config.periodsPerYear, effectiveTermPeriods)
-  const precomputedCalls = precomputeCommitmentCalls(config, fund.commitment, roundMinor)
+  const precomputedCalls = rescaleCommitmentCallsAfterActuals(
+    config,
+    fund.commitment,
+    calledThroughActuals(buckets, lastActualIndex),
+    lastActualIndex + 1,
+    precomputeCommitmentCalls(config, fund.commitment, roundMinor),
+    roundMinor,
+  )
 
   const out: CashFlowPeriod[] = []
   let state: PeriodState = ZERO_STATE

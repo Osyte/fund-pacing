@@ -55,8 +55,11 @@ export const ModelConfigSchema = z
   .refine(
     (c) =>
       c.callSchedule.basis !== 'commitment' ||
-      c.callSchedule.rates.reduce((a, b) => a + b, 0) <= 1 + 1e-9,
-    { message: 'commitment-basis rates cannot sum above 1', path: ['callSchedule', 'rates'] },
+      Math.abs(c.callSchedule.rates.reduce((a, b) => a + b, 0) - 1) <= 1e-9,
+    {
+      message: 'commitment-basis callSchedule.rates must sum to 1',
+      path: ['callSchedule', 'rates'],
+    },
   )
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')

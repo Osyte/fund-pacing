@@ -10,6 +10,11 @@ import { parseISO } from './calendar.js'
 
 const RATE_SUM_EPSILON = 1e-9
 
+interface ScheduleValidationOptions {
+  readonly expectedLength?: number
+  readonly requireCommitmentSumOne?: boolean
+}
+
 function isInt(n: unknown): n is number {
   return typeof n === 'number' && Number.isInteger(n)
 }
@@ -58,12 +63,16 @@ export function validateConfig(config: ModelConfig): ValidationResult {
     add('termExtensionYears', 'INVALID_TERM_EXTENSION', 'must be a finite number >= 0')
   }
 
+  const callScheduleOptions: ScheduleValidationOptions =
+    isInt(config.termPeriods) && config.termPeriods >= 1
+      ? { expectedLength: config.termPeriods, requireCommitmentSumOne: true }
+      : { requireCommitmentSumOne: true }
   validateSchedule(
     config.callSchedule,
     'callSchedule',
     ['commitment', 'unfunded'],
     add,
-    isInt(config.termPeriods) && config.termPeriods >= 1 ? config.termPeriods : undefined,
+    callScheduleOptions,
   )
   if (config.distributionSchedule) {
     validateSchedule(
@@ -82,7 +91,7 @@ function validateSchedule(
   path: string,
   allowed: readonly string[],
   add: (path: string, code: string, message: string) => void,
-  expectedLength?: number,
+  options: ScheduleValidationOptions = {},
 ): void {
   if (!allowed.includes(schedule.basis)) {
     add(`${path}.basis`, 'INVALID_BASIS', `must be one of ${allowed.join(' | ')}`)
@@ -108,21 +117,30 @@ function validateSchedule(
     sum += rate
   })
 
-  if (expectedLength !== undefined && schedule.rates.length !== expectedLength) {
-    const code = schedule.rates.length > expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
+  if (options.expectedLength !== undefined && schedule.rates.length !== options.expectedLength) {
+    const code =
+      schedule.rates.length > options.expectedLength ? 'SCHEDULE_TOO_LONG' : 'SCHEDULE_TOO_SHORT'
     add(
       `${path}.rates`,
       code,
-      `must contain exactly ${expectedLength} rates, one for each term period`,
+      `must contain exactly ${options.expectedLength} rates, one for each term period`,
     )
   }
 
-  if (schedule.basis === 'commitment' && sum > 1 + RATE_SUM_EPSILON) {
-    add(
-      `${path}.rates`,
-      'RATE_SUM_EXCEEDS_COMMITMENT',
-      `commitment-basis rates sum to ${sum}, which exceeds 1`,
-    )
+  if (schedule.basis === 'commitment') {
+    if (sum > 1 + RATE_SUM_EPSILON) {
+      add(
+        `${path}.rates`,
+        'RATE_SUM_EXCEEDS_COMMITMENT',
+        `commitment-basis rates sum to ${sum}, which exceeds 1`,
+      )
+    } else if (options.requireCommitmentSumOne && sum < 1 - RATE_SUM_EPSILON) {
+      add(
+        `${path}.rates`,
+        'RATE_SUM_BELOW_COMMITMENT',
+        `commitment-basis rates sum to ${sum}, which is below 1`,
+      )
+    }
   }
 }
 
