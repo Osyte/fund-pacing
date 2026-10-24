@@ -4,10 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+## 1.0.1
+
 - Make `termExtensionYears` optional in `ModelConfig` and `ModelConfigSchema`, defaulting to zero additional extension years. Preserve late actuals and validation of supplied values. See [#22](https://github.com/Osyte/fund-pacing/issues/22).
 - Add the Observable demonstration's source and maintenance instructions under `examples/observable`, with links from the README and user guide. Example tooling stays separate from the library and published package.
 - Label `reproject` rows with modeled NAV as `source: 'forecast'`, while preserving supplied cash flows, the transaction cutoff, and the existing output shape. Reported NAV, including zero, keeps a row actual.
 - Document and regression-test transaction bucketing to the next calendar period end and the resumption of forecast cash flows after that whole period closes.
+- Add a GitHub Packages workflow that verifies and mirrors the approved npm tarball after a GitHub release, with a manual dry-run option.
+- Update CI coverage artifact uploads to `actions/upload-artifact@v7`.
 
 ## 1.0.0
 
