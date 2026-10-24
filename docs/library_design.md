@@ -286,7 +286,7 @@ G3 is the reason `unfunded` must be derived rather than accumulated. A clamped r
 ### Editorial items applied
 
 - `VariancePeriod`, `ValidationResult`, and `ValidationIssue` are now defined in spec §3.
-- `termExtensionYears` added to `ModelConfig`; it takes effect only in `reproject`, since only actuals can outlive the term.
+- `termExtensionYears` is optional in `ModelConfig`, defaulting to zero extra years; it takes effect only in `reproject`, since only actuals can outlive the term. Late actuals are retained even without additional extension.
 - Field name is `terminalLiquidation` (D3 had a typo).
 - Node 22+ throughout.
 - **Multiple NAV observations in one period:** the last by date wins, ties broken by input order. Deterministic and matches the Python's `.iloc[-1]`.

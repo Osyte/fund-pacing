@@ -23,7 +23,7 @@ export const arbConfig: fc.Arbitrary<ModelConfig> = fc
     bowFactor: fc.double({ min: 0.2, max: 4, noNaN: true }),
     callBasis: fc.constantFrom('commitment' as const, 'unfunded' as const),
     terminalLiquidation: fc.boolean(),
-    termExtensionYears: fc.integer({ min: 0, max: 5 }),
+    termExtensionYears: fc.option(fc.integer({ min: 0, max: 5 }), { nil: undefined }),
   })
   .chain((base) => {
     const termPeriods = base.termPeriods
@@ -35,7 +35,9 @@ export const arbConfig: fc.Arbitrary<ModelConfig> = fc
       bowFactor: base.bowFactor,
       callSchedule: { basis: base.callBasis, rates },
       terminalLiquidation: base.terminalLiquidation,
-      termExtensionYears: base.termExtensionYears,
+      ...(base.termExtensionYears === undefined
+        ? {}
+        : { termExtensionYears: base.termExtensionYears }),
     }))
   })
 

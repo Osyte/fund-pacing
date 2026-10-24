@@ -112,7 +112,7 @@ describe('spec §5 invariants', () => {
     )
   })
 
-  it('#6 actual periods reproduce the supplied amounts verbatim', () => {
+  it('#6 historical periods preserve supplied amounts and only reported NAV makes a row actual', () => {
     fc.assert(
       fc.property(
         arbConfig,
@@ -120,19 +120,20 @@ describe('spec §5 invariants', () => {
         arbStartDate,
         arbTransactions,
         (config, commitment, startDate, actuals) => {
-          const { revised } = representableReprojection(config, { commitment, startDate }, actuals)
+          const { revised, asOf } = representableReprojection(
+            config,
+            { commitment, startDate },
+            actuals,
+          )
 
           const expectedCalls = new Map<string, number>()
           const expectedDists = new Map<string, number>()
-          for (const p of revised) {
-            if (p.source !== 'actual') continue
-            expectedCalls.set(p.periodEnd, 0)
-            expectedDists.set(p.periodEnd, 0)
-          }
+          const expectedNavs = new Map<string, { date: string; amount: number }>()
 
           // Re-bucket independently of the implementation, by period end date.
           for (const tx of actuals) {
-            const period = revised.find((p) => p.source === 'actual' && tx.date <= p.periodEnd)
+            const period = revised.find((p) => tx.date <= p.periodEnd)
+            expect(period).toBeDefined()
             if (!period) continue
             if (tx.type === 'call') {
               expectedCalls.set(
@@ -144,13 +145,24 @@ describe('spec §5 invariants', () => {
                 period.periodEnd,
                 (expectedDists.get(period.periodEnd) ?? 0) + tx.amount,
               )
+            } else {
+              const previous = expectedNavs.get(period.periodEnd)
+              if (!previous || tx.date >= previous.date) {
+                expectedNavs.set(period.periodEnd, { date: tx.date, amount: tx.amount })
+              }
             }
           }
 
           for (const p of revised) {
-            if (p.source !== 'actual') continue
+            if (asOf === null || p.periodEnd > asOf) {
+              expect(p.source).toBe('forecast')
+              continue
+            }
             expect(p.called).toBe(expectedCalls.get(p.periodEnd) ?? 0)
             expect(p.distributed).toBe(expectedDists.get(p.periodEnd) ?? 0)
+            const reportedNav = expectedNavs.get(p.periodEnd)
+            expect(p.source).toBe(reportedNav === undefined ? 'forecast' : 'actual')
+            if (reportedNav !== undefined) expect(p.nav).toBe(reportedNav.amount)
           }
         },
       ),

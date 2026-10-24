@@ -1,0 +1,218 @@
+<!doctype html>
+<notebook theme="air">
+  <title>Reforecast a fund commitment</title>
+  <script id="20" type="text/markdown">
+    # Reforecast a fund commitment
+
+    This notebook runs [`@osyte/fund-pacing`](https://github.com/Osyte/fund-pacing), an open-source Takahashi–Alexander pacing library, in your browser. Nothing is installed, and nothing leaves this page.
+
+    It walks through the example from our post *Your pacing model shouldn't be a black box*: a $50M buyout commitment, the plan made on day one, and what happens to that plan two years in, once the real calls and the manager's NAV arrive.
+
+    Change any input and every chart below updates.
+  </script>
+  <script id="21" type="module" pinned="">
+    import * as fp from "npm:@osyte/fund-pacing@1.0.0";
+  </script>
+  <script id="40" type="module" pinned="">
+    Object.keys(fp)
+  </script>
+  <script id="23" type="text/markdown">
+    ## 1. The plan
+
+    These are the assumptions behind the forecast. The model works in annual periods here; the library also supports semiannual and quarterly periods.
+  </script>
+  <script id="24" type="module" pinned="">
+    const commitmentM = view(Inputs.range([5, 250], {value: 50, step: 5, label: "Commitment ($M)"}));
+    const startDate = view(Inputs.text({value: "2027-01-15", label: "Start date", placeholder: "YYYY-MM-DD"}));
+    const fundLife = view(Inputs.range([6, 15], {value: 12, step: 1, label: "Fund life (years)"}));
+    const growthPct = view(Inputs.range([0, 25], {value: 10, step: 0.5, label: "NAV growth (% a year)"}));
+    const bow = view(Inputs.range([0.5, 6], {value: 2.5, step: 0.1, label: "Bow factor"}));
+    const callText = view(Inputs.text({value: "25, 25, 20, 15, 10, 5", label: "Calls by year (% of commitment)", width: 320}));
+  </script>
+  <script id="25" type="module" pinned="">
+    const callRates = (() => {
+      const rates = callText.split(/[,\s]+/).filter(Boolean).map(Number).map((x) => x / 100);
+      return [...rates, ...Array(Math.max(0, fundLife - rates.length)).fill(0)].slice(0, fundLife);
+    })();
+
+    const config = {
+      fund_life: fundLife,
+      periodsPerYear: 1,
+      growthRate: growthPct / 100,
+      yieldRate: 0,
+      bowFactor: bow,
+      callSchedule: {basis: "commitment", rates: callRates},
+      terminalLiquidation: true,
+      termExtensionYears: 3
+    };
+
+    // money is in whole cents
+    const fund = {commitment: Math.round(commitmentM * 100_000_000), startDate};
+
+    const validation = fp.validateConfig(config);
+  </script>
+  <script id="27" type="text/markdown">
+    ${validation.ok ? "✓ Configuration is valid." : "**Fix before the model can run:** " + validation.issues.map((i) => `${i.path}: ${i.message}`).join("; ")}
+  </script>
+  <script id="29" type="text/markdown">
+    ## 2. Two years later, the actuals arrive
+
+    Enter the fund's full transaction history so far, one line per transaction, with amounts in $M. Types are `call`, `distribution` and `nav`. You always pass the complete history rather than the latest change, so fixing a mistyped line is just editing it.
+
+    The default history is the post's example: the fund called $8M and then $9M against a plan of $12.5M a year, and the manager marked NAV at $17.5M.
+  </script>
+  <script id="30" type="module" pinned="">
+    const actualsText = view(Inputs.textarea({
+      value: "date, type, amount_m\n2027-06-30, call, 8\n2028-06-30, call, 9\n2028-12-31, nav, 17.5",
+      rows: 8,
+      width: 420,
+      label: "Transactions"
+    }));
+  </script>
+  <script id="31" type="module" pinned="">
+    const actuals = actualsText
+      .trim()
+      .split("\n")
+      .slice(1)
+      .map((line) => line.split(",").map((s) => s.trim()))
+      .filter((r) => r.length === 3 && r[0])
+      .map(([date, type, m]) => ({date, type, amount: Math.round(Number(m) * 100_000_000)}));
+
+    const result = fp.reproject(config, fund, actuals);
+
+    const toM = (cents) => cents / 100_000_000;
+
+    const rows = (() => {
+      let cumPlan = 0, cumRev = 0;
+      return result.baseline.map((b, i) => {
+        const r = result.revised[i];
+        cumPlan += toM(b.netCashFlow);
+        cumRev += toM(r.netCashFlow);
+        return {
+          year: +b.periodEnd.slice(0, 4),
+          source: r.source,
+          planCalls: toM(b.called), planDist: toM(b.distributed), planNet: toM(b.netCashFlow), planCum: cumPlan,
+          calls: toM(r.called), dist: toM(r.distributed), net: toM(r.netCashFlow), cum: cumRev
+        };
+      });
+    })();
+
+    const summary = (() => {
+      // The transaction cutoff is independent of row labels when NAV is modeled.
+      const lastHistorical = result.asOf === null ? undefined : +result.asOf.slice(0, 4);
+      const next2 = rows.filter((r) => r.year > (lastHistorical ?? -Infinity)).slice(0, 2);
+      const sum = (a, k) => a.reduce((t, r) => t + r[k], 0);
+      const firstPositive = (k) => rows.find((r) => r[k] > 0)?.year ?? "—";
+      return {
+        lastHistorical,
+        planNext2: sum(next2, "planCalls"),
+        revNext2: sum(next2, "calls"),
+        breakevenPlan: firstPositive("planNet"),
+        breakevenRev: firstPositive("net"),
+        distPlan: sum(rows, "planDist"),
+        distRev: sum(rows, "dist")
+      };
+    })();
+  </script>
+  <script id="34" type="text/markdown">
+    ## 3. What the reforecast changes
+
+    | | Plan | Reforecast |
+    |---|---|---|
+    | Calls in the next two years | $${summary.planNext2.toFixed(1)}M | **$${summary.revNext2.toFixed(1)}M** |
+    | First year of positive net cash flow | ${summary.breakevenPlan} | **${summary.breakevenRev}** |
+    | Lifetime distributions | $${summary.distPlan.toFixed(1)}M | **$${summary.distRev.toFixed(1)}M** |
+
+    The reforecast starts from where the fund actually is: real paid-in capital, real unfunded commitment, and the reported NAV in place of the modelled one. The remaining commitment is spread over the call years that are left, so none of it drops out of the cash plan.
+  </script>
+  <script id="35" type="module" pinned="">
+    Plot.plot({
+      title: "Calls (below the line) and distributions (above), $M",
+      subtitle: "Dashed outline: original plan. Solid: revised cash flows. Shaded: history through the transaction cutoff.",
+      width: 900,
+      height: 420,
+      x: {label: null, tickFormat: "d", ticks: rows.map((r) => r.year)},
+      y: {label: "$M", grid: true},
+      marks: [
+        summary.lastHistorical
+          ? Plot.rect([{}], {
+              x1: () => rows[0].year - 0.5,
+              x2: () => summary.lastHistorical + 0.5,
+              y1: () => -d3.max(rows, (r) => Math.max(r.calls, r.planCalls)) * 1.1,
+              y2: () => d3.max(rows, (r) => Math.max(r.dist, r.planDist)) * 1.1,
+              fill: "#1A2A5E",
+              fillOpacity: 0.06
+            })
+          : null,
+        Plot.rectY(rows, {x1: (d) => d.year - 0.4, x2: (d) => d.year - 0.02, y: "planDist", fill: "none", stroke: "#64748B", strokeDasharray: "3,2"}),
+        Plot.rectY(rows, {x1: (d) => d.year - 0.4, x2: (d) => d.year - 0.02, y: (d) => -d.planCalls, fill: "none", stroke: "#64748B", strokeDasharray: "3,2"}),
+        Plot.rectY(rows, {x1: (d) => d.year + 0.02, x2: (d) => d.year + 0.4, y: "dist", fill: "#2647D9", tip: true,
+          title: (d) => `${d.year} (${d.source})\nDistributions: $${d.dist.toFixed(1)}M (plan $${d.planDist.toFixed(1)}M)`}),
+        Plot.rectY(rows, {x1: (d) => d.year + 0.02, x2: (d) => d.year + 0.4, y: (d) => -d.calls, fill: "#A8BDFF", tip: true,
+          title: (d) => `${d.year} (${d.source})\nCalls: $${d.calls.toFixed(1)}M (plan $${d.planCalls.toFixed(1)}M)`}),
+        Plot.ruleY([0])
+      ]
+    })
+  </script>
+  <script id="36" type="module" pinned="">
+    Plot.plot({
+      title: "Cumulative net cash flow, $M",
+      subtitle: "Dashed: original plan. Solid: actuals, then reforecast.",
+      width: 900,
+      height: 320,
+      x: {label: null, tickFormat: "d", ticks: rows.map((r) => r.year)},
+      y: {label: "$M", grid: true},
+      marks: [
+        Plot.ruleY([0]),
+        Plot.lineY(rows, {x: "year", y: "planCum", stroke: "#64748B", strokeDasharray: "5,4", strokeWidth: 2}),
+        Plot.lineY(rows, {x: "year", y: "cum", stroke: "#2647D9", strokeWidth: 3, tip: true,
+          title: (d) => `${d.year}\nReforecast: $${d.cum.toFixed(1)}M\nPlan: $${d.planCum.toFixed(1)}M`}),
+        Plot.dot(rows.filter((r) => r.source === "actual"), {x: "year", y: "cum", fill: "#2647D9", r: 4})
+      ]
+    })
+  </script>
+  <script id="37" type="module" pinned="">
+    Inputs.table(
+      result.variance.map((v) => ({
+        Year: +v.periodEnd.slice(0, 4),
+        "Calls Δ ($M)": toM(v.calledDelta),
+        "Distributions Δ ($M)": toM(v.distributedDelta),
+        "NAV Δ ($M)": toM(v.navDelta),
+        "TVPI Δ": v.tvpiDelta
+      })),
+      {format: {
+        Year: (y) => String(y),
+        "Calls Δ ($M)": d3.format("+.1f"),
+        "Distributions Δ ($M)": d3.format("+.1f"),
+        "NAV Δ ($M)": d3.format("+.1f"),
+        "TVPI Δ": d3.format("+.2f")
+      }}
+    )
+  </script>
+  <script id="38" type="text/markdown">
+    ## 5. The same thing in your own app
+
+    ```sh
+    npm install @osyte/fund-pacing
+    ```
+
+    ```ts
+    import { reproject } from '@osyte/fund-pacing'
+
+    const { baseline, revised, variance } = reproject(config, fund, actuals)
+    ```
+
+    The library has no dependencies and runs in the browser or on a server. Money is in whole cents and dates are ISO strings, so results go straight into JSON. The full configuration used above is in cell 5.
+  </script>
+  <script id="39" type="text/markdown">
+    ## Build it with us
+
+    Takahashi–Alexander is where the library starts, not where it stops. Ideas on the roadmap include per-period growth, bow factors derived from return targets, stochastic models, and models fitted to your own history.
+
+    - Code and docs: [github.com/Osyte/fund-pacing](https://github.com/Osyte/fund-pacing)
+    - Roadmap and model proposals: the pinned thread in GitHub Discussions
+    - Found a case where the model was wrong for your funds? Open an issue. Anonymised is fine, and it becomes a test.
+
+    *Synthetic example. Not investment advice.*
+  </script>
+</notebook>

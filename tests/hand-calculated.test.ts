@@ -210,12 +210,12 @@ describe('hand-calculated public-library outputs', () => {
       if (mask & 4) actuals.push({ date: '2024-06-30', type: 'nav', amount: 900 })
       const rows = reproject(quarterly, fund, actuals).revised
       expect(rows[1]).toMatchObject({
-        source: 'actual',
+        source: mask & 4 ? 'actual' : 'forecast',
         called: mask & 1 ? 700 : 0,
         distributed: mask & 2 ? 200 : 0,
         nav: mask & 4 ? 900 : 1000 + (mask & 1 ? 700 : 0) - (mask & 2 ? 200 : 0),
       })
-      expect(rows[2]?.nav).toBe(0)
+      expect(rows[2]).toMatchObject({ source: 'actual', nav: 0 })
       conservation(rows)
     }
   })

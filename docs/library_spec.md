@@ -41,10 +41,11 @@ Charting is also out of scope. The library returns plain data structures; the co
 
 **Stateless and pure.** Same inputs → same outputs, always. No hidden state between calls, no singletons, no mutation of arguments. This is what makes the library safe to run in a React render, a Node request handler, a Lambda, and a test — identically.
 
-**Explicit over default.** The calculation engine requires every `ModelConfig`
-field except the optional `distributionSchedule`. Omit that schedule to use the
-TA bow/yield curve. No duration, rate, liquidation, or extension defaults are
-supplied by the library.
+**Explicit model assumptions.** The calculation engine requires every
+`ModelConfig` field except `distributionSchedule` and `termExtensionYears`.
+Omit the distribution override to use the TA bow/yield curve; omit extension
+years for zero additional extension. Duration, rates, and liquidation settings
+remain explicit inputs.
 
 **JSON-serializable in and out.** Every input and output is plain JSON — so the persistence layer above can store a config or a result verbatim, and a server can compute a forecast and ship it to a browser with `JSON.stringify`. Concretely: dates are ISO `YYYY-MM-DD` strings, never `Date` objects; money is integer minor units as `number`, never `bigint` or a class instance.
 
@@ -124,7 +125,7 @@ Annual rates convert to per-period **geometrically** (D7): `perPeriod = (1 + ann
 ### Core types
 
 ```ts
-/** All fields required except the explicit distribution override. */
+/** Distribution override and extension years are optional; other fields are required. */
 interface ModelConfig {
   readonly periodsPerYear: 1 | 2 | 4;
   readonly fund_life: number;               // years; fund_life × periodsPerYear must be a positive safe integer (D12)
@@ -134,7 +135,7 @@ interface ModelConfig {
   readonly callSchedule: CallSchedule;
   readonly distributionSchedule?: DistributionSchedule;  // optional override of the bow curve
   readonly terminalLiquidation: boolean;    // distribute all residual NAV in the final period
-  readonly termExtensionYears: number;      // term extension when actuals outlive the term (D5)
+  readonly termExtensionYears?: number;     // defaults to 0; extra years after late actuals (D5)
 }
 
 /** Curve output — dimensionless. Independent of commitment and calendar. */
@@ -238,7 +239,7 @@ reproject(
   readonly baseline: readonly CashFlowPeriod[]; // original T=0 forecast
   readonly revised: readonly CashFlowPeriod[];  // actuals spliced in, remainder re-forecast
   readonly variance: readonly VariancePeriod[]; // revised − baseline over shared periods (D17)
-  readonly asOf: string | null; // end of latest actual period; null with no actuals
+  readonly asOf: string | null; // end of latest transaction period; null with no actuals
 }
 ```
 
@@ -246,18 +247,20 @@ reproject(
 
 Behaviour:
 
-- Transactions are bucketed into periods by date. Periods up to and including the last transaction are `source: 'actual'`; everything after is `source: 'forecast'`.
-- Pre-start transactions enter period 0 (D14). In actual periods, missing calls and distributions are zero, including gaps in history. Missing NAV is `max(0, grown prior NAV + supplied calls - supplied distributions)`. No forecast flows are substituted for missing actuals.
+- Transactions are bucketed into their containing calendar periods, ending on or after the transaction date. The period containing the latest transaction closes the historical horizon; forecast cash flows resume in the following period without prorating the closed period.
+- Pre-start transactions enter period 0 (D14). In historical periods, missing calls and distributions are zero, including gaps in history. Missing NAV is `max(0, grown prior NAV + supplied calls - supplied distributions)`. No forecast flows are substituted for missing actuals.
 - Reported NAV, where supplied, overrides modelled NAV for that period and becomes the base for forward projection.
-- The forecast resumes from the actual state — actual unfunded, actual NAV, actual PIC.
+- A historical row is `source: 'actual'` only if it has reported NAV, including zero. Whenever NAV is modeled, the whole row is `source: 'forecast'`, while preserving any supplied calls and distributions (D20). All future rows are forecasts.
+- Future cash flows resume from the resulting historical state: unfunded commitment, reported or modeled NAV, and paid-in capital.
 - For `commitment`-basis call schedules, remaining original forecast calls are rescaled toward commitment (D11). If no positive forecast calls remain, no new call periods are created. If actual calls already exceed commitment, future calls are zero.
 - Returning `baseline` alongside `revised` makes forecast-accuracy tracking a first-class output rather than something the caller reconstructs.
 
 The latest transaction of any type determines the actual boundary. `asOf` is
 that period's end, including when the transaction occurred earlier in the period.
 A zero NAV observation is authoritative; it is not treated as missing. A NAV-only
-history does not imply paid-in capital. Historical periods can have modeled NAV
-even though their `source` is `'actual'`.
+history does not imply paid-in capital. Historical rows with modeled NAV are
+forecasts, so source labels need not form a contiguous actual/forecast split.
+`asOf` remains the transaction cutoff regardless of those labels.
 
 ### Reuse configuration validation — validateConfig
 
@@ -280,7 +283,7 @@ Because the prior documentation and the prior code disagree on units, defaults, 
 3. **Empty actuals is a no-op.** `reproject(c, f, [])` returns `revised` deeply equal to `project(c, f)`, and `baseline` equal to `revised`.
 4. **Conservation.** For every period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributed - called`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
 5. **NAV is non-negative** in every period, under every valid config.
-6. **Actuals are preserved by aggregation.** Actual-period calls and distributions equal the sums of supplied transactions. The latest reported NAV by date wins, with input order breaking equal-date ties; the model never replaces that selected observation.
+6. **Actuals are preserved by aggregation.** Historical-period calls and distributions equal the sums of supplied transactions, including rows labeled forecast because NAV is modeled. The latest reported NAV by date wins, with input order breaking equal-date ties; the model never replaces that selected observation.
 7. **Cross-environment determinism.** Node and jsdom produce matching monetary values and canonical JSON snapshots. Integer values are compared exactly; floating outputs are canonicalized at `1e-8` to tolerate last-digit runtime differences. This is browser-like environment coverage, not a test of every browser engine.
 8. **Fund life determines the modeled periods.** The number of periods is `fund_life * periodsPerYear`, a positive safe integer. `callSchedule.rates.length` equals that derived count; period `i` consumes `rates[i]`, including period 0, and no-call periods are explicit zeros.
 9. **Commitment-basis reprojections preserve commitment.** For `basis: 'commitment'` schedules that call 100% of commitment and have remaining forecast call periods, `reproject` rescales future forecast calls after actuals so final `calledCumulative` equals `commitment`, unless actual calls already exceed commitment.
@@ -324,17 +327,19 @@ Percentile NAV bands are outside the three stated deterministic requirements.
 **Decision:** omit Monte Carlo functionality. There is no public `simulate`
 function or committed release version for adding one.
 
-### D5 — Explicit extension after actuals outlive the term
+### D5 — Optional extension after actuals outlive the term
 
-The earlier implementation hard-coded three additional years. The library makes
-that duration an explicit `termExtensionYears` input.
+The earlier implementation hard-coded three additional years. The library uses
+an optional `termExtensionYears` input; omission means zero additional years.
 
 **Decision:** only extend when `lastActualIndex >= fund_life * periodsPerYear`.
-The revised count is `lastActualIndex + 1 + Math.round(termExtensionYears *
+The revised count is `lastActualIndex + 1 + Math.round((termExtensionYears ?? 0) *
 periodsPerYear)`. The baseline retains its original count, and variance covers
-only the shared horizon (D17). Zero extension is valid and still includes the
-late actual period. Extension years retain this rounding convention; unlike
-`fund_life`, they need not align exactly with whole periods.
+only the shared horizon (D17). Omitted or zero extension includes every period
+through the last transaction, with no future periods afterward. Supplied values
+must be finite numbers >= 0. Extension years retain this rounding convention;
+unlike `fund_life`, they need not align exactly with whole periods. All four
+functions accept omission, and the optional Zod schema preserves that contract.
 
 ### D6 — Distribution schedule basis
 
@@ -491,6 +496,21 @@ long or rapidly growing projection can represent every cent. Successful
 projections obey the invariants; precision overflows are explicit errors rather
 than silent corruption. Property tests for conservation and NAV use representable
 histories, with separate overflow regression tests.
+
+---
+
+### D20 — Rows with modeled NAV are forecasts
+
+**Decision:** mark a historical row `source: 'actual'` only when a NAV observation
+was supplied for its period, including a reported zero. Mark the whole row
+`source: 'forecast'` whenever NAV is calculated. Preserve supplied cash flows,
+the transaction cutoff (`asOf`), and the resumption of forecast cash flows after
+that cutoff. Gaps in history also have modeled NAV and are forecast rows.
+Keep the existing result shape without additional source properties or arrays.
+
+**Rationale:** a row containing modeled NAV should not be presented as entirely
+actual. This conservative label keeps modeled values out of actual-only views
+without changing historical cash-flow inputs or the calculation horizon.
 
 ---
 

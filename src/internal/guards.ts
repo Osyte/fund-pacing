@@ -77,9 +77,10 @@ export function validateConfig(config: ModelConfig): ValidationResult {
     add('terminalLiquidation', 'INVALID_FLAG', 'must be a boolean')
   }
   if (
-    typeof input.termExtensionYears !== 'number' ||
-    !Number.isFinite(input.termExtensionYears) ||
-    input.termExtensionYears < 0
+    input.termExtensionYears !== undefined &&
+    (typeof input.termExtensionYears !== 'number' ||
+      !Number.isFinite(input.termExtensionYears) ||
+      input.termExtensionYears < 0)
   ) {
     add('termExtensionYears', 'INVALID_TERM_EXTENSION', 'must be a finite number >= 0')
   }

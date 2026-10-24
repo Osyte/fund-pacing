@@ -48,7 +48,7 @@ export const ModelConfigSchema = z
     callSchedule: CallScheduleSchema,
     distributionSchedule: DistributionScheduleSchema.optional(),
     terminalLiquidation: z.boolean(),
-    termExtensionYears: z.number().finite().min(0),
+    termExtensionYears: z.number().finite().min(0).optional(),
   })
   .refine((c) => Number.isSafeInteger(termPeriodsFor(c)) && termPeriodsFor(c) >= 1, {
     message:
@@ -69,8 +69,12 @@ export const ModelConfigSchema = z
     },
   )
   .transform((config): ModelConfig => {
-    const { distributionSchedule, ...required } = config
-    return distributionSchedule === undefined ? required : { ...required, distributionSchedule }
+    const { distributionSchedule, termExtensionYears, ...required } = config
+    return {
+      ...required,
+      ...(distributionSchedule === undefined ? {} : { distributionSchedule }),
+      ...(termExtensionYears === undefined ? {} : { termExtensionYears }),
+    }
   })
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')

@@ -124,7 +124,6 @@ try {
     bowFactor: 2,
     callSchedule: { basis: 'commitment', rates: [0.2, 0.2, 0.2, 0.2, 0.2] },
     terminalLiquidation: true,
-    termExtensionYears: 1,
   }
   const fund = { commitment: 3, startDate: '2024-01-15' }
   const exercise = `
@@ -136,6 +135,10 @@ try {
     assert.ok(rows.every(row => row.called >= 0));
     assert.equal(rows.at(-1).nav, 0);
     assert.deepEqual(pacing.reproject(config, fund, []).revised, rows);
+    const late = pacing.reproject(config, fund, [{date:'2025-06-15',type:'nav',amount:2}]);
+    assert.equal(late.revised.length, 6);
+    assert.equal(late.asOf, '2025-06-30');
+    assert.equal(late.revised.at(-1).nav, 2);
     assert.equal(JSON.parse(JSON.stringify(rows)).length, 5);
     console.log(JSON.stringify(rows));`
   const esm = run(

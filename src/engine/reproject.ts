@@ -149,9 +149,9 @@ function runProjection(
 
   for (let t = 0; t < effectiveTermPeriods; t++) {
     const periodEnd = periodEnds[t] ?? ''
-    const isActual = t <= lastActualIndex
+    const isHistorical = t <= lastActualIndex
 
-    if (isActual) {
+    if (isHistorical) {
       const bucket = buckets.get(t)
       const called = bucket?.called ?? 0
       const distributed = bucket?.distributed ?? 0
@@ -169,7 +169,10 @@ function runProjection(
         distributedCumulative: state.distributedCumulative + distributed,
         nav,
       }
-      out.push(row(t, periodEnd, 'actual', called, distributed, state, fund.commitment))
+      // A row with calculated NAV stays a forecast, even when its cash flows
+      // were supplied. This label does not move the historical cutoff.
+      const source = bucket?.nav === undefined ? 'forecast' : 'actual'
+      out.push(row(t, periodEnd, source, called, distributed, state, fund.commitment))
       continue
     }
 
@@ -220,7 +223,7 @@ export function reproject(
 
   // Term extension: only actuals can outlive the term (spec D5).
   const termPeriods = termPeriodsFor(config)
-  const extension = Math.round(config.termExtensionYears * config.periodsPerYear)
+  const extension = Math.round((config.termExtensionYears ?? 0) * config.periodsPerYear)
   const effectiveTermPeriods =
     lastActualIndex >= termPeriods ? lastActualIndex + 1 + extension : termPeriods
 
