@@ -1,0 +1,137 @@
+name: Publish GitHub Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag already published to npm, for example v1.0.1
+        required: true
+        type: string
+      dry_run:
+        description: Verify the npm artifact without publishing to GitHub Packages
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-packages-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Osyte/fund-pacing'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          registry-url: https://npm.pkg.github.com
+          scope: '@osyte'
+          package-manager-cache: false
+      - name: Verify release and download the exact npm artifact
+        id: artifact
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { execFileSync } from 'node:child_process'
+          import { createHash } from 'node:crypto'
+          import { appendFileSync, readFileSync, writeFileSync } from 'node:fs'
+          import path from 'node:path'
+
+          const tag = process.env.RELEASE_TAG
+          assert.match(tag, /^v\d+\.\d+\.\d+$/, 'Use a stable version tag such as v1.0.1')
+          const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+          const commit = git('rev-parse', 'HEAD')
+          assert.equal(commit, git('rev-parse', `refs/tags/${tag}^{commit}`))
+          git('merge-base', '--is-ancestor', 'HEAD', 'origin/main')
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'))
+          const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'))
+          assert.equal(pkg.name, '@osyte/fund-pacing')
+          assert.equal(tag, `v${pkg.version}`, 'Tag must match package.json version')
+          assert.equal(lock.version, pkg.version)
+          assert.equal(lock.packages[''].version, pkg.version)
+          assert.equal(pkg.repository.url.toLowerCase(), 'git+https://github.com/osyte/fund-pacing.git')
+
+          const metadata = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg.name)}/${pkg.version}`, {
+            signal: AbortSignal.timeout(30000),
+          })
+          assert(metadata.ok, `Publish and approve this version on npm first (HTTP ${metadata.status})`)
+          const published = await metadata.json()
+          assert.equal(published.name, pkg.name)
+          assert.equal(published.version, pkg.version)
+          assert.equal(published.gitHead, commit, 'npm version must come from the tagged release commit')
+          const url = new URL(published.dist.tarball)
+          assert.equal(url.origin, 'https://registry.npmjs.org')
+          const response = await fetch(url, { signal: AbortSignal.timeout(30000), redirect: 'error' })
+          assert(response.ok, `npm tarball download failed: HTTP ${response.status}`)
+          const bytes = Buffer.from(await response.arrayBuffer())
+          const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`
+          assert.equal(integrity, published.dist.integrity, 'npm tarball integrity mismatch')
+          const packed = JSON.parse(execFileSync('tar', ['-xzOf', '-', 'package/package.json'], {
+            input: bytes,
+            encoding: 'utf8',
+          }))
+          assert.equal(packed.name, pkg.name)
+          assert.equal(packed.version, pkg.version)
+          assert.equal(packed.repository.url.toLowerCase(), pkg.repository.url.toLowerCase())
+          const filename = path.join(process.env.RUNNER_TEMP, `fund-pacing-${pkg.version}.tgz`)
+          writeFileSync(filename, bytes)
+          appendFileSync(process.env.GITHUB_OUTPUT, `tarball=${filename}\nversion=${pkg.version}\nintegrity=${integrity}\n`)
+          console.log(`Verified ${pkg.name}@${pkg.version} from ${commit}; using the original npm tarball.`)
+          NODE
+      - name: Verify package without uploading
+        if: env.DRY_RUN == 'true'
+        env:
+          TARBALL: ${{ steps.artifact.outputs.tarball }}
+        run: npm publish "$TARBALL" --dry-run --ignore-scripts --access public --registry=https://npm.pkg.github.com
+      - name: Check whether the version is already mirrored
+        if: env.DRY_RUN != 'true'
+        id: existing
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.artifact.outputs.version }}
+          INTEGRITY: ${{ steps.artifact.outputs.integrity }}
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { spawnSync } from 'node:child_process'
+          import { appendFileSync } from 'node:fs'
+
+          const result = spawnSync('npm', [
+            'view', `@osyte/fund-pacing@${process.env.VERSION}`, 'dist.integrity',
+            '--json', '--registry=https://npm.pkg.github.com',
+          ], { encoding: 'utf8', timeout: 30000 })
+          if (result.error) throw result.error
+          const data = JSON.parse(result.stdout)
+          if (result.status === 0) {
+            assert.equal(data, process.env.INTEGRITY, 'Existing GitHub version differs from npm')
+            appendFileSync(process.env.GITHUB_OUTPUT, 'published=true\n')
+            console.log('The identical version already exists on GitHub Packages; skipping upload.')
+          } else {
+            assert.equal(data.error?.code, 'E404', `GitHub Packages lookup failed: ${data.error?.code}`)
+            appendFileSync(process.env.GITHUB_OUTPUT, 'published=false\n')
+          }
+          NODE
+      - name: Publish the npm artifact to GitHub Packages
+        if: env.DRY_RUN != 'true' && steps.existing.outputs.published != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARBALL: ${{ steps.artifact.outputs.tarball }}
+        run: npm publish "$TARBALL" --ignore-scripts --access public --registry=https://npm.pkg.github.com

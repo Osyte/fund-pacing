@@ -84,8 +84,8 @@ dates are ISO strings. See [understanding results](docs/results.md).
 
 For [validation and errors](docs/validation.md), the
 [accepted v1 conventions and known limitations](docs/known_issues.md), or
-model rationale, see the [spec](docs/library_spec.md). This is the v1.0.0 release;
-future releases follow semantic versioning.
+model rationale, see the [spec](docs/library_spec.md). Releases follow semantic
+versioning; the npm badge above tracks the latest published version.
 
 ## Contributing and feedback
 
