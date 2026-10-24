@@ -28,7 +28,7 @@ jobs:
         run: npm run check:package
         env:
           npm_config_dry_run: 'true'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-node-${{ matrix.node }}
