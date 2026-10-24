@@ -73,7 +73,7 @@ Only consumers importing `@osyte/fund-pacing/schema` need Zod. Install the
 supported optional peer version explicitly:
 
 ```sh
-npm install zod@^4
+npm install zod@^4.6.6
 ```
 
 ```ts
@@ -95,7 +95,7 @@ see [validation and errors](validation.md#optional-zod-schemas).
 | `Cannot find package '@osyte/fund-pacing'` | Install it in the application or workspace package that imports it, and confirm the package name and registry access. |
 | `Cannot use import statement outside a module` | Use `.mjs`, an ESM package, or your bundler; alternatively use the CommonJS example. |
 | `require is not defined` | Use `import` in an ESM file, or move the CommonJS example to a `.cjs` file. |
-| Missing `zod` after importing `/schema` | Install Zod 4 in the consuming application. |
+| Missing `zod` after importing `/schema` | Install Zod 4.6.6 or a newer compatible 4.x release in the consuming application. |
 | TypeScript cannot resolve declarations | Check your module-resolution mode and that the installed package contains its built `dist` files. |
 | A copied config is rejected | Confirm the installed version matches these docs and follow the [configuration migration](configuration.md#migrating-from-termperiods) when upgrading. |
 
