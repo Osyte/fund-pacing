@@ -15,6 +15,16 @@ without handling an exception.
 | Update a forecast using investment history | `reproject` | Config, fund terms, and transactions |
 | Reuse validation rules in your application | `validateConfig` | Config |
 
+For an interactive walkthrough, open the
+[fund-pacing notebook](https://observablehq.com/@dentrassi/osyte-fund-pacing).
+It demonstrates configuration validation, an original forecast, and reprojection
+with editable assumptions, transaction history, charts, and a variance table.
+The notebook imports a published library version; changes on a local branch
+appear there only after a new release and a notebook update. Its
+[source and maintenance instructions](https://github.com/Osyte/fund-pacing/tree/main/examples/observable)
+are kept in the repository. Observable is optional demonstration tooling; the
+library runs independently of it.
+
 ## Example setup
 
 Examples on this page share the following setup. These are illustrative
@@ -123,7 +133,7 @@ The result contains:
 - `baseline`: the original forecast without actuals.
 - `revised`: historical periods followed by the updated forecast.
 - `variance`: revised-minus-baseline differences over their shared periods.
-- `asOf`: the end of the latest actual period, or `null` with no actuals.
+- `asOf`: the end of the latest period containing supplied transactions, or `null` with no actuals.
 
 ### How transactions become historical periods
 
@@ -132,10 +142,14 @@ latest observation by date wins; equal-date ties use the last input entry.
 Transactions can arrive out of chronological order. The latest transaction of
 **any type** determines the actual boundary, including a zero-amount transaction.
 
-All periods through that boundary are marked `source: 'actual'`, including gaps
-in the supplied history. Forecasting resumes at the next fund-age period from
-the resulting NAV and called capital; the schedule does not restart at index 0.
+All periods through that boundary use supplied calls and distributions, with
+missing amounts treated as zero. Forecast calls and distributions resume at the
+next fund-age period from the resulting NAV and called capital; the schedule
+does not restart at index 0.
 `asOf` is the period end, not necessarily the latest transaction date.
+For example, a May 15 transaction enters the June 30 quarterly row. That whole
+quarter is closed as history; forecast cash flows resume in the September 30 row. The
+engine does not forecast a remainder of the quarter or prorate its rates.
 
 ### Missing actual inputs
 
@@ -148,9 +162,22 @@ Any subset of transaction types is accepted. Within the historical horizon:
 | NAV | Modeled from grown prior NAV plus supplied calls minus supplied distributions, floored at zero. |
 
 A supplied NAV of zero overrides modeled NAV. A NAV-only history does not imply
-earlier paid-in capital. `source: 'actual'` labels a historical period even when
-its NAV is modeled. With omitted or empty actuals, the revised values equal
-`project(config, fund)` and `asOf` is `null`.
+earlier paid-in capital.
+
+A historical row is `source: 'actual'` only when NAV was supplied for that
+period, including zero. Whenever NAV is modeled, the whole row is
+`source: 'forecast'`, including gaps in history. Supplied calls and distributions
+remain unchanged in those rows; the label does not replace them with forecasts
+or reopen the period. A forecast row can therefore appear before a later actual
+row. Use `asOf` to locate the transaction cutoff, rather than the first forecast
+row or the last actual row.
+
+For example, a May 15 call without a NAV observation appears in the June 30 row
+with `source: 'forecast'`. Its call amount is preserved, `asOf` is June 30, and
+forecast calls and distributions resume in September.
+
+With omitted or empty actuals, the revised values equal `project(config, fund)`
+and `asOf` is `null`.
 
 ### Forecast calls after actuals
 
@@ -193,13 +220,17 @@ period 0 actual. See [K5](known_issues.md#k5--accepted-pre-start-transactions-bu
 
 Only actuals beyond the original term trigger `termExtensionYears`:
 
+This optional field defaults to `0`. With no extension setting, late actuals
+still appear in `revised`, but no future periods are added after the last
+transaction period. The example config explicitly sets three extra years:
+
 ```ts
 const extended = reproject(config, fund, [
   { date: '2028-03-31', type: 'nav', amount: 400_000_000 },
 ])
 
 console.log(extended.baseline.length) // 16
-console.log(extended.revised.length) // 29: 17 actual periods + 12 forecast periods
+console.log(extended.revised.length) // 29: 17 historical periods + 12 future periods
 console.log(extended.variance.length) // 16
 ```
 

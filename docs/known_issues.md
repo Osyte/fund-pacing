@@ -73,7 +73,8 @@ calls. See spec D11.
 Transactions dated before `startDate` enter period 0 rather than being rejected
 or discarded. They follow normal bucket rules: calls and distributions sum;
 the latest NAV by date wins, with input order breaking equal-date ties. If these
-are the only actuals, `asOf` is the end of period 0, which is marked actual.
+are the only actuals, `asOf` is the end of period 0. That row is marked actual
+when NAV was supplied; otherwise its modeled NAV makes the row a forecast.
 
 The current engine returns no warnings and performs no logging. The consuming
 application should flag `transaction.date < fund.startDate` for review, using

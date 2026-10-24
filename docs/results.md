@@ -34,7 +34,7 @@ in its `baseline` and `revised` arrays.
 |---|---|
 | `index` | Zero-based model period; period 0 contains `startDate`. |
 | `periodEnd` | ISO calendar quarter-, half-year-, or year-end date. |
-| `source` | `'actual'` through the historical boundary; `'forecast'` afterwards. |
+| `source` | `'actual'` when the period has reported NAV; `'forecast'` whenever NAV is modeled, including historical periods. |
 | `called` | Capital called in the period, in minor units. |
 | `distributed` | Distributions in the period, in minor units. |
 | `netCashFlow` | `distributed - called`, from the investor's perspective. |
@@ -56,7 +56,10 @@ rounded-away cents, `Infinity`, or `NaN`.
 
 Forecast distributions cannot exceed grown NAV plus this period's calls. Reported
 actuals are preserved using the [aggregation rules](user-guide.md#how-transactions-become-historical-periods).
-An actual-period NAV can be modeled if no NAV observation was provided.
+When a historical period has no NAV observation, its NAV is modeled and the
+whole row is labeled `'forecast'`. Supplied calls and distributions in that row
+are still preserved; the label does not mean every amount was forecast. A
+reported NAV of zero counts as actual. Forecast rows may precede actual rows.
 
 ## DPI, RVPI, and TVPI
 
@@ -76,9 +79,13 @@ cumulative calls are zero, including when a NAV observation exists without calls
 | Result field | Meaning |
 |---|---|
 | `baseline` | Original forecast from the current config and fund terms, without actuals. |
-| `revised` | Actual periods followed by the updated forecast. |
+| `revised` | Historical periods incorporating supplied transactions, followed by future forecasts. |
 | `variance` | Revised-minus-baseline values over shared periods. |
-| `asOf` | End of the latest actual period; `null` if no actuals are supplied. |
+| `asOf` | End of the latest period containing supplied transactions, regardless of its `source`; `null` with no actuals. |
+
+`asOf` closes the historical horizon. Forecast calls and distributions resume
+in the following period, even if modeled NAV makes earlier rows `'forecast'`.
+Do not use the first forecast row or the last actual row to infer this cutoff.
 
 Variance rows contain `index`, `periodEnd`, `calledDelta`, `distributedDelta`,
 `navDelta`, and `tvpiDelta`. Money deltas are in minor units; `tvpiDelta` is a

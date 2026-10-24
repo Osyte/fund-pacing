@@ -1,0 +1,12 @@
+{
+  "name": "fund-pacing-observable-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preview": "notebooks preview --root .",
+    "build": "notebooks build --root . -- fund-pacing.html"
+  },
+  "devDependencies": {
+    "@observablehq/notebook-kit": "2.8.0"
+  }
+}

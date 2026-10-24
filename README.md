@@ -7,6 +7,11 @@
 A JavaScript/TypeScript library for modeling private fund cash flows using the
 Takahashi–Alexander model. Stateless, deterministic, and dependency-free at its core.
 
+[Try the interactive example](https://observablehq.com/@dentrassi/osyte-fund-pacing)
+to explore assumptions, transaction history, and cash-flow charts in your browser.
+The [notebook source and update instructions](https://github.com/Osyte/fund-pacing/tree/main/examples/observable)
+are maintained separately from the library.
+
 ## Installation
 
 ```sh
@@ -60,7 +65,6 @@ const config = {
     rates: [0.25, 0.25, 0.25, 0.25, ...Array(12).fill(0)],
   },
   terminalLiquidation: true,
-  termExtensionYears: 3,
 } satisfies ModelConfig
 
 const rows = project(config, {

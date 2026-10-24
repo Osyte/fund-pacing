@@ -23,8 +23,8 @@ export type CallSchedule = CommitmentBasisSchedule | UnfundedBasisSchedule
 export type DistributionSchedule = CommitmentBasisSchedule | NavBasisSchedule
 
 /**
- * Fully resolved model configuration. All fields except distributionSchedule
- * are required. Omitting that override selects the modeled bow/yield curve.
+ * Model configuration. Omitting distributionSchedule selects the modeled
+ * bow/yield curve; omitting termExtensionYears means no additional extension.
  */
 export interface ModelConfig {
   readonly periodsPerYear: Frequency
@@ -41,8 +41,8 @@ export interface ModelConfig {
   readonly distributionSchedule?: DistributionSchedule
   /** Distribute all residual NAV in the final period. */
   readonly terminalLiquidation: boolean
-  /** Term extension when actuals outlive the term. Only affects `reproject`. */
-  readonly termExtensionYears: number
+  /** Extra years after actuals outlive the term. Defaults to 0; only affects `reproject`. */
+  readonly termExtensionYears?: number
 }
 
 /** Curve output. Dimensionless: independent of commitment and calendar. */
@@ -69,6 +69,7 @@ export type FlowSource = 'actual' | 'forecast'
 export interface CashFlowPeriod {
   readonly index: number
   readonly periodEnd: string
+  /** Actual only with reported NAV; modeled NAV makes the whole row a forecast. */
   readonly source: FlowSource
   readonly called: number
   readonly distributed: number
@@ -110,7 +111,7 @@ export interface ReprojectResult {
   readonly revised: readonly CashFlowPeriod[]
   /** Revised minus baseline over shared periods; no rows beyond the baseline horizon. */
   readonly variance: readonly VariancePeriod[]
-  /** Boundary between actual and forecast. `null` when there are no actuals. */
+  /** End of the latest period with supplied transactions, regardless of source; null without any. */
   readonly asOf: string | null
 }
 

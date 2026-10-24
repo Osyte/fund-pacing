@@ -35,8 +35,10 @@ const config = {
 console.log(validateConfig(config)) // { ok: true }
 ```
 
-Every field is required except `distributionSchedule`. The engine does not fill
-in duration, growth, yield, bow, liquidation, or extension defaults.
+Every field is required except `distributionSchedule` and `termExtensionYears`.
+Omitting `distributionSchedule` selects the modeled bow/yield curve. Omitting
+`termExtensionYears` means zero additional extension years. Duration, growth,
+yield, bow, and liquidation settings must still be supplied explicitly.
 
 ## Field reference
 
@@ -50,7 +52,7 @@ in duration, growth, yield, bow, liquidation, or extension defaults.
 | `callSchedule` | `{ basis, rates }` | Per-period call rates; see schedule bases below. |
 | `distributionSchedule` | Optional `{ basis, rates }` | Explicit distribution rates, replacing the bow/yield curve. |
 | `terminalLiquidation` | `true` or `false` | Whether the final forecast period distributes all available assets. |
-| `termExtensionYears` | Finite years >= 0 | Additional forecast duration after actuals outlive the original term. |
+| `termExtensionYears` | Optional finite years >= 0; defaults to `0` | Additional forecast duration after actuals outlive the original term. |
 
 ## Periodicity affects the model
 
@@ -138,16 +140,24 @@ positive final NAV: a bow or explicit rate can still distribute all residual NAV
 
 ## Extension years
 
-`termExtensionYears` affects only `reproject`, when actuals extend beyond the
-original term. The revised count becomes:
+`termExtensionYears` is optional and defaults to `0`. It affects only `reproject`,
+when actuals extend beyond the original term. The revised count becomes:
 
 ```text
-lastActualIndex + 1 + Math.round(termExtensionYears * periodsPerYear)
+lastActualIndex + 1 + Math.round((termExtensionYears ?? 0) * periodsPerYear)
 ```
 
-Zero is valid and still includes the late actual period. Extension years retain
-this rounding convention; unlike `fund_life`, they need not align exactly with
-whole periods. Baseline and variance retain the original horizon.
+Omitting the field or supplying zero still includes every period through the
+last transaction, but adds no future periods afterward. For example, a one-year
+quarterly fund starting in January 2024 has four baseline rows. With a February
+2025 transaction and no extension setting, `revised` has five rows through
+March 31, 2025, and no additional forecast periods.
+
+Supplied values must be finite numbers >= 0; negative values, `null`, numeric
+strings, `NaN`, and infinities are rejected. Extension years retain the existing
+rounding convention; unlike `fund_life`, they need not align exactly with whole
+periods. Baseline and variance retain the original horizon. `buildSchedule` and
+`project` accept omission too; they never add extension periods.
 
 ## Migrating from termPeriods
 

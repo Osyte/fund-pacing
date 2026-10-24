@@ -38,7 +38,7 @@ const COMMITMENT_CONFIG: ModelConfig = {
 const SMALL_FUND = { commitment: 10_000, startDate: '2024-01-15' }
 
 describe('reproject', () => {
-  it('marks periods up to the last transaction as actual', () => {
+  it('labels missing-NAV history as forecast without moving the transaction cutoff', () => {
     const { revised, asOf } = reproject(CONFIG, FUND, [
       { date: '2024-03-31', type: 'call', amount: 1_000_000_00 },
       { date: '2024-09-30', type: 'call', amount: 500_000_00 },
@@ -46,9 +46,73 @@ describe('reproject', () => {
     // startDate 2024-01-15 puts period 0 at 2024-03-31, so the last
     // transaction (2024-09-30) lands at index 2.
     expect(asOf).toBe('2024-09-30')
-    expect(revised.filter((p) => p.source === 'actual')).toHaveLength(3) // indices 0..2
-    expect(revised[2]?.source).toBe('actual')
+    expect(revised.every((p) => p.source === 'forecast')).toBe(true)
+    expect(revised.slice(0, 3).map((p) => p.called)).toEqual([1_000_000_00, 0, 500_000_00])
+    expect(revised.slice(0, 3).map((p) => p.distributed)).toEqual([0, 0, 0])
     expect(revised[3]?.source).toBe('forecast')
+  })
+
+  it.each([
+    { frequency: 4, date: '2024-02-29', end: '2024-03-31', next: '2024-06-30', index: 0 },
+    { frequency: 4, date: '2024-05-15', end: '2024-06-30', next: '2024-09-30', index: 1 },
+    { frequency: 4, date: '2024-06-30', end: '2024-06-30', next: '2024-09-30', index: 1 },
+    { frequency: 4, date: '2024-07-01', end: '2024-09-30', next: '2024-12-31', index: 2 },
+    { frequency: 2, date: '2024-05-15', end: '2024-06-30', next: '2024-12-31', index: 0 },
+    { frequency: 2, date: '2024-07-01', end: '2024-12-31', next: '2025-06-30', index: 1 },
+    { frequency: 1, date: '2024-05-15', end: '2024-12-31', next: '2025-12-31', index: 0 },
+    { frequency: 1, date: '2024-12-31', end: '2024-12-31', next: '2025-12-31', index: 0 },
+  ] as const)(
+    'closes the $frequency-period/year bucket containing $date before forecasting',
+    ({ frequency, date, end, next, index }) => {
+      const periods = 3 * frequency
+      const config: ModelConfig = {
+        ...COMMITMENT_CONFIG,
+        fund_life: 3,
+        periodsPerYear: frequency,
+        callSchedule: { basis: 'commitment', rates: Array(periods).fill(1 / periods) },
+        distributionSchedule: { basis: 'nav', rates: Array(periods).fill(0) },
+      }
+      const result = reproject(config, SMALL_FUND, [{ date, type: 'call', amount: 1000 }])
+      expect(result.asOf).toBe(end)
+      expect(result.revised[index]).toMatchObject({
+        periodEnd: end,
+        source: 'forecast',
+        called: 1000,
+        distributed: 0,
+      })
+      expect(result.revised.slice(0, index).every((row) => row.called === 0)).toBe(true)
+      expect(result.revised[index + 1]).toMatchObject({ periodEnd: next, source: 'forecast' })
+      expect(result.revised[index + 1]?.called).toBeGreaterThan(0)
+      expect(result.revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
+      expect(result.baseline).toEqual(project(config, SMALL_FUND))
+    },
+  )
+
+  it('distinguishes reported NAV, modeled gaps, and modeled cash-flow rows in one history', () => {
+    const result = reproject(COMMITMENT_CONFIG, SMALL_FUND, [
+      { date: '2024-09-15', type: 'distribution', amount: 200 },
+      { date: '2024-02-15', type: 'nav', amount: 900 },
+      { date: '2024-07-01', type: 'call', amount: 500 },
+      { date: '2024-02-01', type: 'call', amount: 1000 },
+    ])
+    expect(result.asOf).toBe('2024-09-30')
+    expect(result.revised.map((p) => [p.source, p.called, p.distributed, p.nav])).toEqual([
+      ['actual', 1000, 0, 900],
+      ['forecast', 0, 0, 900],
+      ['forecast', 500, 200, 1200],
+      ['forecast', 8500, 0, 9700],
+    ])
+  })
+
+  it.each([0, 900])('marks reported NAV %i as actual even after modeled history', (nav) => {
+    const result = reproject(COMMITMENT_CONFIG, SMALL_FUND, [
+      { date: '2024-02-15', type: 'call', amount: 1000 },
+      { date: '2024-05-15', type: 'nav', amount: nav },
+    ])
+    expect(result.revised[0]).toMatchObject({ source: 'forecast', called: 1000, nav: 1000 })
+    expect(result.revised[1]).toMatchObject({ source: 'actual', called: 0, distributed: 0, nav })
+    expect(result.revised[2]).toMatchObject({ source: 'forecast', called: 4500, nav: nav + 4500 })
+    expect(result.asOf).toBe('2024-06-30')
   })
 
   it('resumes the rate schedule at fund age, not index 0 (spec D2)', () => {
@@ -72,6 +136,7 @@ describe('reproject', () => {
       { date: '2024-03-31', type: 'nav', amount: 900_000_00 },
     ])
     expect(revised[0]?.nav).toBe(900_000_00)
+    expect(revised[0]?.source).toBe('actual')
   })
 
   it('takes the last NAV when a period has several', () => {
@@ -92,6 +157,7 @@ describe('reproject', () => {
     // Actuals reach index 24, beyond 5 years x 4 = 20 periods, so the term extends by
     // termExtensionYears (3) x periodsPerYear (4) = 12 periods.
     expect(revised.length).toBe(24 + 12 + 1)
+    expect(revised.every((p) => p.source === 'forecast')).toBe(true)
   })
 
   it('reports variance against the untouched baseline', () => {
