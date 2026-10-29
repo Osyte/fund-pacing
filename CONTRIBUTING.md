@@ -82,10 +82,19 @@ with organization `Osyte`, repository `fund-pacing`, workflow filename
 the connection allows `npm stage publish` by default.
 The filename and organization must match exactly. See
 [npm's trusted publishing guide](https://docs.npmjs.com/trusted-publishers/).
+An unvalidated connection expires after two days. If it expires, delete and
+recreate it in npm, then complete the first successful publish within the new
+validation deadline. Publishing manually does not validate the GitHub connection.
 
 To check the workflow without uploading, open **Actions → Stage npm release → Run
-workflow**, enter an existing version tag, and leave **dry_run** enabled. A dry
-run verifies the package but does not test the npm OIDC authorization itself.
+workflow**, select the branch containing the workflow you want to test, enter an
+existing version tag, and leave **dry_run** enabled. The workflow checks npm OIDC
+authentication before installing dependencies, then verifies the package without
+uploading it. A successful token exchange confirms authentication but does not
+replace the first successful publish needed to validate a pending connection.
+If npm rejects the exchange, check the connection's expiry and exact settings
+above; logging in locally or adding an npm token secret does not repair the
+trusted-publisher connection.
 Existing published versions are skipped on staging runs. A successful staging
 run does not make the new version installable: review it in npm's **Staged
 Packages** tab and approve it with 2FA after scanning completes. The workflow
