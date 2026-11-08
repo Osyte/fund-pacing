@@ -98,8 +98,8 @@ function row(
     index,
     periodEnd,
     source,
-    called,
-    distributed,
+    calledPeriod: called,
+    distributedPeriod: distributed,
     netCashFlow: distributed - called,
     calledCumulative: state.calledCumulative,
     distributedCumulative: state.distributedCumulative,
@@ -242,8 +242,8 @@ export function reproject(
     variance.push({
       index: i,
       periodEnd: r.periodEnd,
-      calledDelta: r.called - b.called,
-      distributedDelta: r.distributed - b.distributed,
+      calledDelta: r.calledPeriod - b.calledPeriod,
+      distributedDelta: r.distributedPeriod - b.distributedPeriod,
       navDelta: r.nav - b.nav,
       tvpiDelta: r.tvpi - b.tvpi,
     })

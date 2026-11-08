@@ -82,7 +82,7 @@ describe('spec §5 invariants', () => {
           const { revised } = representableReprojection(config, { commitment, startDate }, actuals)
           for (const p of revised) {
             expect(p.unfunded + p.calledCumulative).toBe(commitment)
-            expect(p.netCashFlow).toBe(p.distributed - p.called)
+            expect(p.netCashFlow).toBe(p.distributedPeriod - p.calledPeriod)
           }
         },
       ),
@@ -158,8 +158,8 @@ describe('spec §5 invariants', () => {
               expect(p.source).toBe('forecast')
               continue
             }
-            expect(p.called).toBe(expectedCalls.get(p.periodEnd) ?? 0)
-            expect(p.distributed).toBe(expectedDists.get(p.periodEnd) ?? 0)
+            expect(p.calledPeriod).toBe(expectedCalls.get(p.periodEnd) ?? 0)
+            expect(p.distributedPeriod).toBe(expectedDists.get(p.periodEnd) ?? 0)
             const reportedNav = expectedNavs.get(p.periodEnd)
             expect(p.source).toBe(reportedNav === undefined ? 'forecast' : 'actual')
             if (reportedNav !== undefined) expect(p.nav).toBe(reportedNav.amount)
@@ -180,10 +180,10 @@ describe('spec §5 invariants', () => {
         expect(rows).toHaveLength(termPeriods)
         expect(reproject(config, { commitment, startDate }).baseline).toHaveLength(termPeriods)
         for (const s of schedule) {
-          expect(s.callRate).toBe(config.callSchedule.rates[s.index])
+          if (config.callSchedule.rates[s.index] === 0) expect(s.calledPeriod).toBe(0)
         }
         for (const r of rows) {
-          if (config.callSchedule.rates[r.index] === 0) expect(r.called).toBe(0)
+          if (config.callSchedule.rates[r.index] === 0) expect(r.calledPeriod).toBe(0)
         }
       }),
       RUNS,

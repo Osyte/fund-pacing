@@ -141,12 +141,15 @@ interface ModelConfig {
 /** Curve output — dimensionless. Independent of commitment and calendar. */
 interface SchedulePeriod {
   readonly index: number;
-  readonly callRate: number;
-  readonly distributionRate: number;
-  readonly calledFraction: number;          // cumulative, of commitment
-  readonly distributedFraction: number;     // cumulative, of commitment
-  readonly unfundedFraction: number;
-  readonly navFraction: number;
+  readonly calledPeriod: number;            // calculated flow, fraction of total commitment
+  readonly distributedPeriod: number;       // calculated flow, including caps and liquidation
+  readonly calledCumulative: number;          // cumulative, of commitment
+  readonly distributedCumulative: number;     // cumulative, of commitment
+  readonly unfunded: number;
+  readonly nav: number;
+  readonly dpi: number;
+  readonly rvpi: number;
+  readonly tvpi: number;
 }
 
 /** Investment cash-flow output — dated, denominated, in minor units. */
@@ -154,8 +157,8 @@ interface CashFlowPeriod {
   readonly index: number;
   readonly periodEnd: string;               // ISO date
   readonly source: 'actual' | 'forecast';
-  readonly called: number;
-  readonly distributed: number;
+  readonly calledPeriod: number;
+  readonly distributedPeriod: number;
   readonly netCashFlow: number;
   readonly calledCumulative: number;        // PIC
   readonly distributedCumulative: number;
@@ -281,7 +284,7 @@ Because the prior documentation and the prior code disagree on units, defaults, 
 1. **Commitment-basis schedules are exact.** Given `basis: 'commitment'` with rates summing to 1.0 within validation tolerance, final `calledCumulative` equals `commitment` to the cent. Accepted rate weights are normalized to the commitment, not used to change its total. The four-year fixture verifies the correction to the earlier implementation's 68.4% result.
 2. **Curves are scale- and calendar-invariant.** `buildSchedule` output does not change with commitment or start date. Proves the fractional/denominated split is clean.
 3. **Empty actuals is a no-op.** `reproject(c, f, [])` returns `revised` deeply equal to `project(c, f)`, and `baseline` equal to `revised`.
-4. **Conservation.** For every period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributed - called`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
+4. **Conservation.** For every investment period: `unfunded + calledCumulative === commitment`, and `netCashFlow === distributedPeriod - calledPeriod`. Holds exactly, including when overcalled — `unfunded` is permitted to be negative rather than clamped (D8).
 5. **NAV is non-negative** in every period, under every valid config.
 6. **Actuals are preserved by aggregation.** Historical-period calls and distributions equal the sums of supplied transactions, including rows labeled forecast because NAV is modeled. The latest reported NAV by date wins, with input order breaking equal-date ties; the model never replaces that selected observation.
 7. **Cross-environment determinism.** Node and jsdom produce matching monetary values and canonical JSON snapshots. Integer values are compared exactly; floating outputs are canonicalized at `1e-8` to tolerate last-digit runtime differences. This is browser-like environment coverage, not a test of every browser engine.
@@ -511,6 +514,31 @@ Keep the existing result shape without additional source properties or arrays.
 **Rationale:** a row containing modeled NAV should not be presented as entirely
 actual. This conservative label keeps modeled values out of actual-only views
 without changing historical cash-flow inputs or the calculation horizon.
+
+---
+
+### D21 — Consistent output names and normalized period flows
+
+**Decision:** use `calledPeriod`, `distributedPeriod`, `calledCumulative`,
+`distributedCumulative`, `unfunded`, `nav`, `dpi`, `rvpi`, and `tvpi` for the shared
+results of `buildSchedule`, `project`, and `reproject`. Schedule capital values
+are decimal fractions of total commitment; investment capital values are integer
+minor units. Schedule period flows are the recurrence's calculated amounts,
+including configured bases, distribution caps, and terminal liquidation, rather
+than the rates applied to unfunded commitment or NAV. Multiples use cumulative
+calls as the denominator, return zero when nothing has been called, and reject
+non-finite ratios with `NUMERIC_OVERFLOW`.
+
+Remove the old output names; inputs and configured schedule bases are unchanged.
+Investment metadata, `netCashFlow`, `overcalled`, and variance fields retain their
+existing contract. Monetary rounding means scaled schedule values and multiples
+need not exactly equal investment results. See [output migration](results.md#output-name-migration).
+
+**Rationale:** a shared table should not need different field names for the same
+quantity. A 30% call rate on 75% remaining unfunded commitment yields a period
+call of 22.5% of total commitment. The normalized period flow can be compared
+directly with a commitment-sized investment projection, while the original rate
+remains part of the configuration. See [issue #29](https://github.com/Osyte/fund-pacing/issues/29).
 
 ---
 

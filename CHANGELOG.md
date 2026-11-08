@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+- **Breaking:** align output names across `buildSchedule`, `project`, and `reproject`. Period flows use `calledPeriod` and `distributedPeriod`; schedule cumulatives use `calledCumulative` and `distributedCumulative`, with `unfunded` and `nav` for balances. Old output names are removed. Schedule period flows are calculated fractions of total commitment, not the former configured call/distribution rates. See [#29](https://github.com/Osyte/fund-pacing/issues/29) and the [migration guide](docs/results.md#output-name-migration).
+- Add DPI, RVPI, and TVPI to schedule rows using the existing investment-multiple formulas and zero-called convention. Reject non-finite multiples with `NUMERIC_OVERFLOW`.
+
 ## 1.0.1
 
 - Require patched Zod `^4.6.6` for the optional schema entry point and update the development lockfile to address [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). Core imports remain independent of Zod.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { distributionAt } from '../src/engine/rates.js'
 import {
   buildSchedule,
   type ModelConfig,
@@ -29,8 +30,10 @@ describe('accepted v1 conventions', () => {
     }
     // Halfway through four years the bow rate is 25% in both models, but the
     // quarterly model has applied distributions more often by that point.
-    expect(buildSchedule(annual)[1]?.distributionRate).toBe(0.25)
-    expect(buildSchedule(CONFIG)[7]?.distributionRate).toBe(0.25)
+    expect(distributionAt(annual, 1, 4).rate).toBe(0.25)
+    expect(distributionAt(CONFIG, 7, 16).rate).toBe(0.25)
+    expect(buildSchedule(annual)[1]?.distributedCumulative).toBe(0.25)
+    expect(buildSchedule(CONFIG)[7]?.distributedCumulative).toBeGreaterThan(0.25)
     const annualHalfway = project(annual, FUND)[1]?.distributedCumulative ?? 0
     const quarterlyHalfway = project(CONFIG, FUND)[7]?.distributedCumulative ?? 0
     expect(annualHalfway).toBe(2500)
@@ -48,8 +51,8 @@ describe('accepted v1 conventions', () => {
     expect(revised[0]).toMatchObject({
       periodEnd: '2024-03-31',
       source: 'actual',
-      called: 1200,
-      distributed: 100,
+      calledPeriod: 1200,
+      distributedPeriod: 100,
       nav: 1700,
       netCashFlow: -1100,
     })

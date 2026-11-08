@@ -53,7 +53,11 @@ describe('optional term extension (issue #22)', () => {
       expect(result.baseline).toHaveLength(periodsPerYear)
       expect(result.variance).toHaveLength(periodsPerYear)
       expect(result.revised).toHaveLength(periodsPerYear + 1)
-      expect(result.revised.at(-1)).toMatchObject({ source: 'actual', called: 1000, nav: 900 })
+      expect(result.revised.at(-1)).toMatchObject({
+        source: 'actual',
+        calledPeriod: 1000,
+        nav: 900,
+      })
       expect(result.asOf).toBe(result.revised.at(-1)?.periodEnd)
 
       // Explicit fractional extensions retain the existing frequency-dependent rounding.
@@ -70,8 +74,8 @@ describe('optional term extension (issue #22)', () => {
     expect(result.revised.at(-1)).toMatchObject({
       periodEnd: '2025-03-31',
       source: 'forecast',
-      called: 1000,
-      distributed: 0,
+      calledPeriod: 1000,
+      distributedPeriod: 0,
       nav: 1000,
     })
     expect(result.asOf).toBe('2025-03-31')

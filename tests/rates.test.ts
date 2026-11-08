@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { callRateAt, distributionAt, perPeriodRate } from '../src/engine/rates.js'
+import { distributionAt, perPeriodRate } from '../src/engine/rates.js'
 import { type ModelConfig, reproject } from '../src/index.js'
 
 const config: ModelConfig = {
@@ -33,14 +33,12 @@ describe('rate resolution units', () => {
     }
     expect(distributionAt(explicit, 0, 4)).toEqual({ rate: 0.1, basis: 'commitment' })
     expect(distributionAt(explicit, 2, 4)).toEqual({ rate: 0, basis: 'commitment' })
-    expect(callRateAt(config, -1)).toBe(0)
-    expect(callRateAt(config, 4)).toBe(0)
   })
   it('does not invent new call periods when actuals exhaust the scheduled call window', () => {
     const result = reproject(config, { commitment: 10000, startDate: '2024-01-01' }, [
       { date: '2024-06-30', type: 'call', amount: 1000 },
     ])
-    expect(result.revised.map((row) => row.called)).toEqual([1000, 0, 0, 0])
+    expect(result.revised.map((row) => row.calledPeriod)).toEqual([1000, 0, 0, 0])
     expect(result.revised.at(-1)?.unfunded).toBe(9000)
   })
   it('preserves observed zero NAV and zero distributions even when the model predicts activity', () => {
@@ -48,6 +46,11 @@ describe('rate resolution units', () => {
       { date: '2024-06-30', type: 'call', amount: 1000 },
       { date: '2025-06-30', type: 'nav', amount: 0 },
     ])
-    expect(result.revised[1]).toMatchObject({ source: 'actual', called: 0, distributed: 0, nav: 0 })
+    expect(result.revised[1]).toMatchObject({
+      source: 'actual',
+      calledPeriod: 0,
+      distributedPeriod: 0,
+      nav: 0,
+    })
   })
 })

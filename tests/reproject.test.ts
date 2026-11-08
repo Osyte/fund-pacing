@@ -47,8 +47,8 @@ describe('reproject', () => {
     // transaction (2024-09-30) lands at index 2.
     expect(asOf).toBe('2024-09-30')
     expect(revised.every((p) => p.source === 'forecast')).toBe(true)
-    expect(revised.slice(0, 3).map((p) => p.called)).toEqual([1_000_000_00, 0, 500_000_00])
-    expect(revised.slice(0, 3).map((p) => p.distributed)).toEqual([0, 0, 0])
+    expect(revised.slice(0, 3).map((p) => p.calledPeriod)).toEqual([1_000_000_00, 0, 500_000_00])
+    expect(revised.slice(0, 3).map((p) => p.distributedPeriod)).toEqual([0, 0, 0])
     expect(revised[3]?.source).toBe('forecast')
   })
 
@@ -77,12 +77,12 @@ describe('reproject', () => {
       expect(result.revised[index]).toMatchObject({
         periodEnd: end,
         source: 'forecast',
-        called: 1000,
-        distributed: 0,
+        calledPeriod: 1000,
+        distributedPeriod: 0,
       })
-      expect(result.revised.slice(0, index).every((row) => row.called === 0)).toBe(true)
+      expect(result.revised.slice(0, index).every((row) => row.calledPeriod === 0)).toBe(true)
       expect(result.revised[index + 1]).toMatchObject({ periodEnd: next, source: 'forecast' })
-      expect(result.revised[index + 1]?.called).toBeGreaterThan(0)
+      expect(result.revised[index + 1]?.calledPeriod).toBeGreaterThan(0)
       expect(result.revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
       expect(result.baseline).toEqual(project(config, SMALL_FUND))
     },
@@ -96,7 +96,9 @@ describe('reproject', () => {
       { date: '2024-02-01', type: 'call', amount: 1000 },
     ])
     expect(result.asOf).toBe('2024-09-30')
-    expect(result.revised.map((p) => [p.source, p.called, p.distributed, p.nav])).toEqual([
+    expect(
+      result.revised.map((p) => [p.source, p.calledPeriod, p.distributedPeriod, p.nav]),
+    ).toEqual([
       ['actual', 1000, 0, 900],
       ['forecast', 0, 0, 900],
       ['forecast', 500, 200, 1200],
@@ -109,9 +111,18 @@ describe('reproject', () => {
       { date: '2024-02-15', type: 'call', amount: 1000 },
       { date: '2024-05-15', type: 'nav', amount: nav },
     ])
-    expect(result.revised[0]).toMatchObject({ source: 'forecast', called: 1000, nav: 1000 })
-    expect(result.revised[1]).toMatchObject({ source: 'actual', called: 0, distributed: 0, nav })
-    expect(result.revised[2]).toMatchObject({ source: 'forecast', called: 4500, nav: nav + 4500 })
+    expect(result.revised[0]).toMatchObject({ source: 'forecast', calledPeriod: 1000, nav: 1000 })
+    expect(result.revised[1]).toMatchObject({
+      source: 'actual',
+      calledPeriod: 0,
+      distributedPeriod: 0,
+      nav,
+    })
+    expect(result.revised[2]).toMatchObject({
+      source: 'forecast',
+      calledPeriod: 4500,
+      nav: nav + 4500,
+    })
     expect(result.asOf).toBe('2024-06-30')
   })
 
@@ -123,10 +134,10 @@ describe('reproject', () => {
     // rates[4] — resuming at fund age, not restarting at rates[0].
     const next = revised[4]
     const unfundedBefore = revised[3]?.unfunded ?? 0
-    expect(next?.called).toBe(Math.round(0.2 * unfundedBefore))
+    expect(next?.calledPeriod).toBe(Math.round(0.2 * unfundedBefore))
 
     // Restarting would have applied rates[0] to a materially different base.
-    const restarted = revised[4]?.called === Math.round(0.25 * 5_000_000_00)
+    const restarted = revised[4]?.calledPeriod === Math.round(0.25 * 5_000_000_00)
     expect(restarted).toBe(false)
   })
 
@@ -165,7 +176,7 @@ describe('reproject', () => {
       { date: '2024-03-31', type: 'call', amount: 4_000_000_00 },
     ])
     const v = result.variance[0]
-    expect(v?.calledDelta).toBe(4_000_000_00 - (result.baseline[0]?.called ?? 0))
+    expect(v?.calledDelta).toBe(4_000_000_00 - (result.baseline[0]?.calledPeriod ?? 0))
     expect(result.baseline).toEqual(project(CONFIG, FUND))
   })
 
@@ -184,7 +195,7 @@ describe('reproject', () => {
       { date: '2024-03-31', type: 'call', amount: 6_000 },
     ])
 
-    expect(revised.map((p) => p.called)).toEqual([6_000, 1_333, 1_333, 1_334])
+    expect(revised.map((p) => p.calledPeriod)).toEqual([6_000, 1_333, 1_333, 1_334])
     expect(revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
   })
 
@@ -193,7 +204,7 @@ describe('reproject', () => {
       { date: '2024-03-31', type: 'call', amount: 1_000 },
     ])
 
-    expect(revised.map((p) => p.called)).toEqual([1_000, 3_000, 3_000, 3_000])
+    expect(revised.map((p) => p.calledPeriod)).toEqual([1_000, 3_000, 3_000, 3_000])
     expect(revised.at(-1)?.calledCumulative).toBe(SMALL_FUND.commitment)
   })
 
@@ -202,7 +213,7 @@ describe('reproject', () => {
       { date: '2024-03-31', type: 'call', amount: 11_000 },
     ])
 
-    expect(revised.map((p) => p.called)).toEqual([11_000, 0, 0, 0])
+    expect(revised.map((p) => p.calledPeriod)).toEqual([11_000, 0, 0, 0])
     expect(revised.at(-1)?.calledCumulative).toBe(11_000)
     expect(revised.at(-1)?.overcalled).toBe(true)
   })

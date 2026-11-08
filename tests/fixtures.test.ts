@@ -37,15 +37,15 @@ describe('4-year quarterly example (documentation §"Examples and Test Cases")',
 
   it('calls 25% in each of the first four quarters', () => {
     for (let i = 0; i < 4; i++) {
-      expect(rows[i]?.called).toBe(COMMITMENT / 4)
+      expect(rows[i]?.calledPeriod).toBe(COMMITMENT / 4)
     }
-    expect(rows[4]?.called).toBe(0)
+    expect(rows[4]?.calledPeriod).toBe(0)
   })
 
   it('applies rates[0] in period 0', () => {
     const schedule = buildSchedule(FOUR_YEAR)
-    expect(schedule[0]?.callRate).toBe(0.25)
-    expect(schedule[4]?.callRate).toBe(0)
+    expect(schedule[0]?.calledPeriod).toBe(0.25)
+    expect(schedule[4]?.calledPeriod).toBe(0)
   })
 
   it('generates true quarter-end dates', () => {
@@ -74,7 +74,7 @@ describe('unfunded basis leaves a residual, by design', () => {
       },
     }
     const schedule = buildSchedule(config)
-    const called = schedule[4]?.calledFraction ?? 0
+    const called = schedule[4]?.calledCumulative ?? 0
     // 1 - (0.70 x 0.65 x 0.60 x 0.65 x 0.80)
     expect(called).toBeCloseTo(0.85804, 5)
   })
