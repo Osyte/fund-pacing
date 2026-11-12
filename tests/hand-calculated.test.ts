@@ -34,7 +34,7 @@ const fund = { commitment: 10000, startDate: '2024-01-15' }
 function conservation(rows: readonly CashFlowPeriod[]) {
   for (const row of rows) {
     expect(row.unfunded + row.calledCumulative).toBe(fund.commitment)
-    expect(row.netCashFlow).toBe(row.distributed - row.called)
+    expect(row.netCashFlow).toBe(row.distributedPeriod - row.calledPeriod)
     expect(row.nav).toBeGreaterThanOrEqual(0)
     expect(row.dpi).toBe(
       row.calledCumulative ? row.distributedCumulative / row.calledCumulative : 0,
@@ -52,8 +52,8 @@ describe('hand-calculated public-library outputs', () => {
         index: 0,
         periodEnd: '2024-12-31',
         source: 'forecast',
-        called: 4000,
-        distributed: 0,
+        calledPeriod: 4000,
+        distributedPeriod: 0,
         netCashFlow: -4000,
         calledCumulative: 4000,
         distributedCumulative: 0,
@@ -68,8 +68,8 @@ describe('hand-calculated public-library outputs', () => {
         index: 1,
         periodEnd: '2025-12-31',
         source: 'forecast',
-        called: 3000,
-        distributed: 1100,
+        calledPeriod: 3000,
+        distributedPeriod: 1100,
         netCashFlow: -1900,
         calledCumulative: 7000,
         distributedCumulative: 1100,
@@ -84,8 +84,8 @@ describe('hand-calculated public-library outputs', () => {
         index: 2,
         periodEnd: '2026-12-31',
         source: 'forecast',
-        called: 2000,
-        distributed: 3465,
+        calledPeriod: 2000,
+        distributedPeriod: 3465,
         netCashFlow: 1465,
         calledCumulative: 9000,
         distributedCumulative: 4565,
@@ -100,8 +100,8 @@ describe('hand-calculated public-library outputs', () => {
         index: 3,
         periodEnd: '2027-12-31',
         source: 'forecast',
-        called: 1000,
-        distributed: 7012,
+        calledPeriod: 1000,
+        distributedPeriod: 7012,
         netCashFlow: 6012,
         calledCumulative: 10000,
         distributedCumulative: 11577,
@@ -123,7 +123,7 @@ describe('hand-calculated public-library outputs', () => {
     )
     conservation(rows)
     expect(project({ ...annual, terminalLiquidation: false }, fund).at(-1)).toMatchObject({
-      distributed: 6012,
+      distributedPeriod: 6012,
       nav: 1000,
       distributedCumulative: 10577,
       tvpi: expect.closeTo(1.1577, 14),
@@ -150,10 +150,10 @@ describe('hand-calculated public-library outputs', () => {
     ]
     rows.forEach((row, i) => {
       for (const [j, field] of [
-        'calledFraction',
-        'distributedFraction',
-        'unfundedFraction',
-        'navFraction',
+        'calledCumulative',
+        'distributedCumulative',
+        'unfunded',
+        'nav',
       ].entries()) {
         expect(row[field as keyof typeof row]).toBeCloseTo(expected[i]?.[j] ?? NaN, 14)
       }
@@ -178,7 +178,7 @@ describe('hand-calculated public-library outputs', () => {
     const result = reproject(quarterly, fund, actuals)
     expect(result.asOf).toBe('2024-06-30')
     expect(
-      result.revised.map((r) => [r.source, r.called, r.distributed, r.nav, r.unfunded]),
+      result.revised.map((r) => [r.source, r.calledPeriod, r.distributedPeriod, r.nav, r.unfunded]),
     ).toEqual([
       ['actual', 3000, 100, 2900, 7000],
       ['actual', 0, 0, 3600, 7000],
@@ -211,8 +211,8 @@ describe('hand-calculated public-library outputs', () => {
       const rows = reproject(quarterly, fund, actuals).revised
       expect(rows[1]).toMatchObject({
         source: mask & 4 ? 'actual' : 'forecast',
-        called: mask & 1 ? 700 : 0,
-        distributed: mask & 2 ? 200 : 0,
+        calledPeriod: mask & 1 ? 700 : 0,
+        distributedPeriod: mask & 2 ? 200 : 0,
         nav: mask & 4 ? 900 : 1000 + (mask & 1 ? 700 : 0) - (mask & 2 ? 200 : 0),
       })
       expect(rows[2]).toMatchObject({ source: 'actual', nav: 0 })
@@ -224,7 +224,7 @@ describe('hand-calculated public-library outputs', () => {
     const rows = reproject(quarterly, fund, [
       { date: '2024-03-31', type: 'call', amount: 12000 },
     ]).revised
-    expect(rows.map((r) => r.called)).toEqual([12000, 0, 0, 0])
+    expect(rows.map((r) => r.calledPeriod)).toEqual([12000, 0, 0, 0])
     expect(rows.every((r) => r.unfunded === -2000 && r.overcalled)).toBe(true)
     conservation(rows)
   })
@@ -243,7 +243,9 @@ describe('hand-calculated public-library outputs', () => {
       '2025-09-30',
     ])
     expect(result.asOf).toBe('2025-03-31')
-    expect(result.revised.slice(4).map((r) => [r.called, r.distributed, r.nav])).toEqual([
+    expect(
+      result.revised.slice(4).map((r) => [r.calledPeriod, r.distributedPeriod, r.nav]),
+    ).toEqual([
       [0, 0, 5000],
       [0, 0, 5000],
       [0, 0, 5000],
@@ -259,7 +261,7 @@ describe('hand-calculated public-library outputs', () => {
       },
       fund,
     )
-    expect(unfunded.map((r) => r.called)).toEqual([5000, 2500, 1250, 625])
+    expect(unfunded.map((r) => r.calledPeriod)).toEqual([5000, 2500, 1250, 625])
     expect(unfunded.at(-1)?.unfunded).toBe(625)
     const capped = project(
       {
@@ -268,7 +270,7 @@ describe('hand-calculated public-library outputs', () => {
       },
       fund,
     )
-    expect(capped.map((r) => [r.distributed, r.nav])).toEqual([
+    expect(capped.map((r) => [r.distributedPeriod, r.nav])).toEqual([
       [2500, 0],
       [2000, 500],
       [0, 3000],
@@ -289,8 +291,8 @@ describe('hand-calculated public-library outputs', () => {
       fund,
     )
     const yearly = project(annual, fund)
-    expect(rows.map((r) => [r.called, r.distributed, r.nav])).toEqual(
-      yearly.map((r) => [r.called, r.distributed, r.nav]),
+    expect(rows.map((r) => [r.calledPeriod, r.distributedPeriod, r.nav])).toEqual(
+      yearly.map((r) => [r.calledPeriod, r.distributedPeriod, r.nav]),
     )
   })
 })

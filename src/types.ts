@@ -45,15 +45,20 @@ export interface ModelConfig {
   readonly termExtensionYears?: number
 }
 
-/** Curve output. Dimensionless: independent of commitment and calendar. */
+/** Curve amounts are fractions of total commitment; multiples are dimensionless. */
 export interface SchedulePeriod {
   readonly index: number
-  readonly callRate: number
-  readonly distributionRate: number
-  readonly calledFraction: number
-  readonly distributedFraction: number
-  readonly unfundedFraction: number
-  readonly navFraction: number
+  /** Calculated period call, after applying the configured schedule basis. */
+  readonly calledPeriod: number
+  /** Calculated period distribution, including caps and terminal liquidation. */
+  readonly distributedPeriod: number
+  readonly calledCumulative: number
+  readonly distributedCumulative: number
+  readonly unfunded: number
+  readonly nav: number
+  readonly dpi: number
+  readonly rvpi: number
+  readonly tvpi: number
 }
 
 export interface FundTerms {
@@ -71,8 +76,8 @@ export interface CashFlowPeriod {
   readonly periodEnd: string
   /** Actual only with reported NAV; modeled NAV makes the whole row a forecast. */
   readonly source: FlowSource
-  readonly called: number
-  readonly distributed: number
+  readonly calledPeriod: number
+  readonly distributedPeriod: number
   readonly netCashFlow: number
   readonly calledCumulative: number
   readonly distributedCumulative: number

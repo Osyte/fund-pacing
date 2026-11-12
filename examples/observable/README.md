@@ -28,6 +28,11 @@ modeled NAV and `source: 'forecast'`. Individual row labels still come directly
 from the library. This local adjustment does not update the live notebook;
 its owner must apply it there when updating the example.
 
+The display accepts `calledPeriod` and `distributedPeriod` from the upcoming
+output format, with a fallback to the pinned version's `called` and `distributed`
+fields. This keeps the version 1.0.0 example working before the new release is
+published. Updating the import to a new release is still an explicit step.
+
 The default example uses annual periods and compares the shared baseline and
 revised horizon. See the [user guide](../../docs/user-guide.md) for quarterly and
 semiannual configurations, term extension, and the meanings of `source` and

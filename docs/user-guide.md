@@ -73,7 +73,7 @@ const earlierDistributions = buildSchedule({ ...config, bowFactor: 1.5 })
 const laterDistributions = buildSchedule({ ...config, bowFactor: 3 })
 
 console.log(curve.length) // 16
-console.log(curve[0]?.calledFraction) // 0.25
+console.log(curve[0]?.calledCumulative) // 0.25
 ```
 
 All three calls use the same quarterly frequency. You can similarly compare
@@ -82,9 +82,11 @@ raises the bow rate before term end; yield can set a higher rate floor. Changing
 frequency requires a new call-schedule length and bow calibration, as explained
 under [periodicity](configuration.md#periodicity-affects-the-model).
 
-The output includes period index, call/distribution rates, cumulative called and
-distributed fractions, NAV fraction, and unfunded fraction. It has no calendar
-dates or currency amounts. See [curve results](results.md#curve-results).
+The output includes period flows (`calledPeriod`, `distributedPeriod`), cumulative
+flows, `nav`, and `unfunded` as fractions of total commitment, plus DPI, RVPI,
+and TVPI. The period flows are calculated amounts after applying schedule bases,
+distribution caps, and terminal liquidation; they are not the configured rates.
+It has no calendar dates or currency amounts. See [curve results](results.md#curve-results).
 
 ## Forecast a prospective or new investment
 
@@ -96,7 +98,7 @@ const forecast = project(config, fund)
 
 console.log(forecast.length) // 16
 console.log(forecast[0]?.periodEnd) // '2024-03-31'
-console.log(forecast[0]?.called) // 250000000 cents ($2.5 million)
+console.log(forecast[0]?.calledPeriod) // 250000000 cents ($2.5 million)
 console.log(forecast[0]?.source) // 'forecast'
 console.log(forecast.at(-1)?.nav) // 0 with this terminal-liquidation setting
 ```
@@ -125,7 +127,7 @@ const result = reproject(config, fund, actuals)
 console.log(result.asOf) // '2024-06-30'
 console.log(result.revised[1]?.nav) // 360000000: the reported NAV
 console.log(result.revised[2]?.source) // 'forecast'
-console.log(result.revised[2]?.called) // 325000000 cents ($3.25 million)
+console.log(result.revised[2]?.calledPeriod) // 325000000 cents ($3.25 million)
 ```
 
 The result contains:

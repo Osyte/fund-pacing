@@ -22,17 +22,6 @@ export function perPeriodRate(annual: number, periodsPerYear: Frequency): number
 }
 
 /**
- * Call rate for a zero-based period index.
- *
- * Period 0 consumes `rates[0]`. Periods with no calls must be represented by
- * explicit zero rates in the schedule.
- */
-export function callRateAt(config: ModelConfig, index: number): number {
-  if (index < 0 || index >= termPeriodsFor(config)) return 0
-  return config.callSchedule.rates[index] ?? 0
-}
-
-/**
  * Commitment-basis calls are allocated in one pass so the parts sum to the
  * target exactly. Rounding each period independently drifts by a minor unit.
  *

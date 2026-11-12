@@ -83,20 +83,20 @@ for (const page of pages) {
 }
 const readme = outputs['README.md']
 assert.equal(readme.rows.length, 16)
-assert.equal(readme.rows[0].called, 250000000)
+assert.equal(readme.rows[0].calledPeriod, 250000000)
 assert.equal(readme.rows[0].periodEnd, '2024-03-31')
 const guide = outputs['docs/user-guide.md']
-assert.equal(guide.curve[0].calledFraction, 0.25)
+assert.equal(guide.curve[0].calledCumulative, 0.25)
 assert.ok(
-  guide.earlierDistributions[7].distributedFraction >
-    guide.laterDistributions[7].distributedFraction,
+  guide.earlierDistributions[7].distributedCumulative >
+    guide.laterDistributions[7].distributedCumulative,
 )
 assert.equal(guide.forecast.length, 16)
 assert.equal(guide.forecast[0].source, 'forecast')
 assert.equal(guide.forecast.at(-1).nav, 0)
 assert.equal(guide.result.asOf, '2024-06-30')
 assert.equal(guide.result.revised[1].nav, 360000000)
-assert.equal(guide.result.revised[2].called, 325000000)
+assert.equal(guide.result.revised[2].calledPeriod, 325000000)
 assert.equal(guide.result.revised[2].source, 'forecast')
 assert.deepEqual(
   [guide.extended.baseline.length, guide.extended.revised.length, guide.extended.variance.length],

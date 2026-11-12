@@ -30,7 +30,7 @@ const FUND = { commitment: 10000, startDate: '2024-01-15' }
 describe('release regression: monetary allocation', () => {
   it('never creates negative calls for a three-cent commitment split over five periods', () => {
     const rows = project(CONFIG, { ...FUND, commitment: 3 })
-    expect(rows.map((row) => row.called)).toEqual([1, 1, 1, 0, 0])
+    expect(rows.map((row) => row.calledPeriod)).toEqual([1, 1, 1, 0, 0])
     expect(rows.at(-1)?.calledCumulative).toBe(3)
   })
   it('preserves exact nonnegative integer allocations for tiny and maximum-safe totals', () => {
@@ -80,7 +80,7 @@ describe('release regression: monetary allocation', () => {
       { date: '2024-03-31', type: 'call', amount: 97 },
     ])
     expect(revised.at(-1)?.calledCumulative).toBe(100)
-    expect(revised.every((row) => row.called >= 0)).toBe(true)
+    expect(revised.every((row) => row.calledPeriod >= 0)).toBe(true)
   })
   it('rejects fractional cumulative overflow even when each individual period remains finite', () => {
     const periods = 700

@@ -72,7 +72,7 @@ const rows = project(config, {
   startDate: '2024-01-15',
 })
 
-console.log(rows[0]?.called) // 250000000 cents ($2.5 million)
+console.log(rows[0]?.calledPeriod) // 250000000 cents ($2.5 million)
 console.log(rows[0]?.periodEnd) // '2024-03-31'
 ```
 

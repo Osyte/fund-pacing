@@ -129,10 +129,15 @@ try {
   const exercise = `
     const config = ${JSON.stringify(config)}, fund = ${JSON.stringify(fund)};
     assert.equal(pacing.validateConfig(config).ok, true);
-    assert.equal(pacing.buildSchedule(config).length, 5);
+    const curve = pacing.buildSchedule(config);
+    assert.equal(curve.length, 5);
+    assert.deepEqual(curve[0], {index:0, calledPeriod:0.2, distributedPeriod:0,
+      calledCumulative:0.2, distributedCumulative:0, unfunded:0.8, nav:0.2,
+      dpi:0, rvpi:1, tvpi:1});
     const rows = pacing.project(config, fund);
     assert.equal(rows.at(-1).calledCumulative, 3);
-    assert.ok(rows.every(row => row.called >= 0));
+    assert.ok(rows.every(row => row.calledPeriod >= 0));
+    assert.ok(rows.every(row => !('called' in row) && !('distributed' in row)));
     assert.equal(rows.at(-1).nav, 0);
     assert.deepEqual(pacing.reproject(config, fund, []).revised, rows);
     const late = pacing.reproject(config, fund, [{date:'2025-06-15',type:'nav',amount:2}]);
@@ -216,11 +221,20 @@ try {
     writeFileSync(
       path.join(consumer, `types.${extension}`),
       `
-      import {project, type ModelConfig, type CashFlowPeriod} from '@osyte/fund-pacing';
+      import {buildSchedule, project, type ModelConfig, type CashFlowPeriod, type SchedulePeriod} from '@osyte/fund-pacing';
       import {ModelConfigSchema} from '@osyte/fund-pacing/schema';
       const config: ModelConfig = ModelConfigSchema.parse(${JSON.stringify(config)});
       const rows: readonly CashFlowPeriod[] = project(config, ${JSON.stringify(fund)});
+      const curve: SchedulePeriod[] = buildSchedule(config);
+      const periodCall: number = curve[0].calledPeriod;
+      const periodDistribution: number = rows[0].distributedPeriod;
+      const scheduleMultiple: number = curve[0].tvpi;
+      void [periodCall, periodDistribution, scheduleMultiple];
       void rows;
+      // @ts-expect-error Legacy cash-flow output names are removed.
+      rows[0].called;
+      // @ts-expect-error Schedule period flows replace the old rate outputs.
+      curve[0].callRate;
       // @ts-expect-error Public projection rows are readonly.
       rows[0].nav = 0;
       // @ts-expect-error The public model requires fund_life.

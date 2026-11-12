@@ -1,14 +1,9 @@
 import { assertValidConfig } from '../internal/guards.js'
+import { multiples } from '../internal/metrics.js'
 import { noRound } from '../internal/money.js'
 import { termPeriodsFor } from '../internal/term.js'
 import type { ModelConfig, SchedulePeriod } from '../types.js'
-import {
-  callAmountAt,
-  callRateAt,
-  distributionAt,
-  perPeriodRate,
-  precomputeCommitmentCalls,
-} from './rates.js'
+import { callAmountAt, distributionAt, perPeriodRate, precomputeCommitmentCalls } from './rates.js'
 import { type PeriodState, stepPeriod, ZERO_STATE } from './recurrence.js'
 
 /**
@@ -29,7 +24,6 @@ export function buildSchedule(config: ModelConfig): SchedulePeriod[] {
   const precomputedCalls = precomputeCommitmentCalls(config, 1, noRound)
 
   for (let t = 0; t < term; t++) {
-    const callRate = callRateAt(config, t)
     const distribution = distributionAt(config, t, term)
 
     const result = stepPeriod(state, {
@@ -46,12 +40,13 @@ export function buildSchedule(config: ModelConfig): SchedulePeriod[] {
 
     out.push({
       index: t,
-      callRate,
-      distributionRate: distribution.rate,
-      calledFraction: state.calledCumulative,
-      distributedFraction: state.distributedCumulative,
-      unfundedFraction: 1 - state.calledCumulative,
-      navFraction: state.nav,
+      calledPeriod: result.called,
+      distributedPeriod: result.distributed,
+      calledCumulative: state.calledCumulative,
+      distributedCumulative: state.distributedCumulative,
+      unfunded: 1 - state.calledCumulative,
+      nav: state.nav,
+      ...multiples(state.calledCumulative, state.distributedCumulative, state.nav),
     })
   }
 

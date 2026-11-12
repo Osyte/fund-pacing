@@ -91,8 +91,8 @@
         return {
           year: +b.periodEnd.slice(0, 4),
           source: r.source,
-          planCalls: toM(b.called), planDist: toM(b.distributed), planNet: toM(b.netCashFlow), planCum: cumPlan,
-          calls: toM(r.called), dist: toM(r.distributed), net: toM(r.netCashFlow), cum: cumRev
+          planCalls: toM(b.calledPeriod ?? b.called), planDist: toM(b.distributedPeriod ?? b.distributed), planNet: toM(b.netCashFlow), planCum: cumPlan,
+          calls: toM(r.calledPeriod ?? r.called), dist: toM(r.distributedPeriod ?? r.distributed), net: toM(r.netCashFlow), cum: cumRev
         };
       });
     })();
