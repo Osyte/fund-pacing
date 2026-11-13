@@ -77,6 +77,46 @@ jobs:
           appendFileSync(process.env.GITHUB_OUTPUT, `published=${published}\n`)
           if (published) console.log(`${pkg.name}@${pkg.version} already exists; staging will be skipped.`)
           NODE
+      - name: Check npm trusted-publisher authentication
+        if: steps.release.outputs.published != 'true' || env.DRY_RUN == 'true'
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { readFileSync } from 'node:fs'
+
+          const { name } = JSON.parse(readFileSync('package.json', 'utf8'))
+          const settings = 'Check npm package Settings → Trusted publishing: organization Osyte, repository fund-pacing, workflow publish.yml, no environment, and staging permission. Unvalidated connections expire after two days; recreate an expired connection before retrying.'
+          const requestURL = process.env.ACTIONS_ID_TOKEN_REQUEST_URL
+          const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN
+          assert(requestURL && requestToken, 'GitHub OIDC credentials are missing. The publishing job requires id-token: write on a GitHub-hosted runner.')
+          const url = new URL(requestURL)
+          url.searchParams.set('audience', 'npm:registry.npmjs.org')
+          const identity = await fetch(url, {
+            headers: { Authorization: `Bearer ${requestToken}` },
+            signal: AbortSignal.timeout(30000),
+            redirect: 'error',
+          })
+          assert(identity.ok, `GitHub OIDC token request failed (HTTP ${identity.status}). Check the job's id-token: write permission.`)
+          const identityBody = await identity.json().catch(() => null)
+          const value = identityBody?.value
+          assert(typeof value === 'string' && value.length > 0, 'GitHub returned no OIDC token.')
+
+          // Exchange credentials only: this does not upload, stage, or approve a package.
+          // npm performs its own fresh exchange when the staging command runs later.
+          const exchange = await fetch(`https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${encodeURIComponent(name)}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${value}` },
+            signal: AbortSignal.timeout(30000),
+            redirect: 'error',
+          })
+          assert(exchange.ok, `npm rejected this workflow's trusted-publisher authentication (HTTP ${exchange.status}). ${settings}`)
+          const exchangeBody = await exchange.json().catch(() => null)
+          const token = exchangeBody?.token
+          assert(typeof token === 'string' && token.length > 0, `npm returned no publishing credential. ${settings}`)
+          // Never log tokens or response bodies, or save credentials in files or outputs.
+          console.log('npm trusted-publisher authentication succeeded. No package was uploaded. A pending connection still requires its first successful publish within the validation deadline.')
+          NODE
       - name: Install dependencies
         if: steps.release.outputs.published != 'true' || env.DRY_RUN == 'true'
         run: npm ci

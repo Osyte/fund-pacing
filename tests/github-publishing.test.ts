@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest'
 
 const workflow = readFileSync('.github/workflows/publish-github.yml', 'utf8')
 const scripts = [
-  ...workflow.matchAll(/node --input-type=module <<'NODE'\n([\s\S]*?)          NODE/g),
-].map((match) => (match[1] ?? '').replace(/^          /gm, '').replace(/^import .+\n/gm, ''))
+  ...workflow.matchAll(/node --input-type=module <<'NODE'\n([\s\S]*?) {10}NODE/g),
+].map((match) => (match[1] ?? '').replace(/^ {10}/gm, '').replace(/^import .+\n/gm, ''))
 const pkg = {
   name: '@osyte/fund-pacing',
   version: '1.0.1',
